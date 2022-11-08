@@ -1,0 +1,15 @@
+Client/node_modules
+Server/run.bat
+Server/node_modules
+Server/lib/node_modules
+Server/Web/public/js/**
+!Server/Web/public/js/jquery.js
+Server/sub/global.json
+Server/sub/nick.json
+node_modules/**
+.idea
+logs/**
+suspicions/**
+Game 1.bat
+Game 2.bat
+Game 3.bat
