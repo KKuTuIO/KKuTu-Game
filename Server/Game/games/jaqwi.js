@@ -18,7 +18,7 @@
 
 import * as Const from '../../const.js';
 import { Tail } from '../../sub/lizard.js';
-import { DB, DIC,
+import { DB, DIC, getTheme, getThemeWords, getRandom,
     ROBOT_CATCH_RATE, ROBOT_TYPE_COEF } from './_common.js';
 
 let robotTimers = {};
@@ -46,22 +46,25 @@ export function roundReady () {
     my.game.round++;
     my.game.roundTime = my.time * 1000;
     if (my.game.round <= my.round) {
-        my.game.theme = my.opts.injpick[Math.floor(Math.random() * ijl)];
-        getAnswer.call(my, my.game.theme).then(function ($ans) {
-            if (!my.game.done) return;
+        my.game.theme = getTheme.call(my);
+        let words = getThemeWords.call(my, my.game.theme);
+        let $ans;
+        do {
+            $ans = getRandom(words);
+        } while (my.game.done.includes($ans._id));
+        if (!my.game.done) return;
 
-            // $ans가 null이면 골치아프다...
-            my.game.late = false;
-            my.game.answer = $ans || {};
-            my.game.done.push($ans._id);
-            $ans.mean = ($ans.mean.length > 5) ? $ans.mean : getConsonants($ans._id, Math.round($ans._id.length / 2));
-            my.game.hint = getHint.call(my, $ans);
-            my.byMaster('roundReady', {
-                round: my.game.round,
-                theme: my.game.theme
-            }, true);
-            setTimeout(my.turnStart, 2400);
-        });
+        // $ans가 null이면 골치아프다...
+        my.game.late = false;
+        my.game.answer = $ans || {};
+        my.game.done.push($ans._id);
+        $ans.mean = ($ans.mean.length > 5) ? $ans.mean : getConsonants($ans._id, Math.round($ans._id.length / 2));
+        my.game.hint = getHint.call(my, $ans);
+        my.byMaster('roundReady', {
+            round: my.game.round,
+            theme: my.game.theme
+        }, true);
+        setTimeout(my.turnStart, 2400);
     } else {
         my.roundEnd();
     }

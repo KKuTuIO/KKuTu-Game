@@ -58,9 +58,7 @@ export function init (_DB, _DIC) {
 }
 
 export function shuffle (arr) {
-    let i, r = [];
-    
-    for(i in arr) r.push(arr[i]);
+    let r = [...arr];
     r.sort(function (a, b) { return Math.random() - 0.5; });
     
     return r;
@@ -69,6 +67,17 @@ export function shuffle (arr) {
 export function getRandom (arr) {
     if (!arr || arr.length < 1) return;
     return arr[Math.floor(Math.random() * arr.length)];
+}
+
+export function getTheme () {
+    let my = this;
+
+    if (!my.game) return;
+    if (!(my.opts.injpick && my.opts.injpick.length)) return;
+    if (!(my.game.pool && my.game.pool.length)) {
+        my.game.pool = shuffle([...my.opts.injpick]);
+    }
+    return my.game.pool.pop();
 }
 
 export function getChar (text) {
@@ -338,6 +347,14 @@ function getSpcWordList(char, subc, iij) {
     if (!subc) return R;
 
     return R.concat(getSpcWordList.call(my, subc));
+}
+
+export function getThemeWords (theme) {
+    let my = this;
+    if (!theme) return;
+    
+    let CACHE = DB.THEME_CACHE[my.rule.lang];
+    if (CACHE.hasOwnProperty(theme)) return CACHE[theme];
 }
 
 const log05 = Math.log(0.5);

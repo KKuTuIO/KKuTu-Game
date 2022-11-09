@@ -18,9 +18,9 @@
 
 import * as Const from '../../const.js';
 import { Tail } from '../../sub/lizard.js';
-import { DB, DIC, getRandom, getMission, getAuto, getPenalty,
-    getPreScore, toRegex, ROBOT_START_DELAY, ROBOT_TYPE_COEF,
-    ROBOT_THINK_COEF, ROBOT_HIT_LIMIT } from './_common.js';
+import { DB, DIC, getTheme, getMission, getThemeWords, getRandom,
+    getPenalty, getPreScore, toRegex, ROBOT_START_DELAY, ROBOT_TYPE_COEF,
+    ROBOT_THINK_COEF, ROBOT_HIT_LIMIT, ROBOT_LENGTH_LIMIT } from './_common.js';
 
 export function getTitle () {
     let R = new Tail();
@@ -38,7 +38,7 @@ export function roundReady () {
     my.game.round++;
     my.game.roundTime = my.time * 1000;
     if (my.game.round <= my.round) {
-        my.game.theme = getRandom(my.opts.injpick);
+        my.game.theme = getTheme.call(my);
         my.game.chain = [];
         if (my.opts.mission) my.game.mission = getMission(my.rule.lang, my.opts.tactical);
         my.byMaster('roundReady', {
@@ -94,15 +94,15 @@ export function turnEnd () {
         score = getPenalty(my.game.chain, target.game.score);
         target.game.score += score;
     }
-    getAuto.call(my, my.game.theme, 0).then(function (w) {
-        my.byMaster('turnEnd', {
-            ok: false,
-            target: target ? target.id : null,
-            score: score,
-            hint: w
-        }, true);
-        my.game._rrt = setTimeout(my.roundReady, 3000);
-    });
+    let words = getThemeWords.call(my, my.game.theme);
+    let w = getRandom(words);
+    my.byMaster('turnEnd', {
+        ok: false,
+        target: target ? target.id : null,
+        score: score,
+        hint: w
+    }, true);
+    my.game._rrt = setTimeout(my.roundReady, 3000);
     clearTimeout(my.game.robotTimer);
 }
 export function submit (client, text, data) {
@@ -187,18 +187,20 @@ export function readyRobot (robot) {
     let my = this;
     let level = robot.level;
     let delay = ROBOT_START_DELAY[level];
-    let w, text;
-
-    getAuto.call(my, my.game.theme, 2).then(function (list) {
-        if (list.length) {
-            list.sort(function (a, b) {
-                return b.hit - a.hit;
-            });
-            // 봇 설정 - 단어대결은 제한이 절반이다.
-            if (Math.floor(ROBOT_HIT_LIMIT[level] / 2) > list[0].hit) denied();
-            else pickList(list);
-        } else denied();
-    });
+    let hitLim = Math.floor(ROBOT_HIT_LIMIT[level] / 2);
+    let word, text;
+    let list = getThemeWords.call(my, my.game.theme)
+    
+    if (list.length) {
+        let highestHit = 0;
+        for (word of list) {
+            if (highestHit < word.hit) highestHit = word.hit;
+            if (highestHit >= hitLim) break;
+        }
+        // 봇 설정 - 단어대결은 제한이 절반이다.
+        if (hitLim > highestHit) denied();
+        else pickList(list);
+    } else denied();
 
     function denied() {
         text = "... T.T";
@@ -206,12 +208,34 @@ export function readyRobot (robot) {
     }
 
     function pickList(list) {
-        if (list) do {
-            if (!(w = list.shift())) break;
-        } while (false);
-        if (w) {
-            text = w._id;
-            delay += 500 * ROBOT_THINK_COEF[level] * Math.random() / Math.log(1.1 + w.hit);
+        let target, diff;
+        if (list) {
+        for (word of list) {
+                if (word._id.length > ROBOT_LENGTH_LIMIT[level]) continue;
+                if (hitLim > word.hit) continue;
+                if (my.game.chain.includes(word._id)) continue;
+                if (!target || target._id.length <= word._id.length) {
+                    // if (firstMove && word._id.length > 15) continue; // 단어대결에서는 첫턴 글자수 제한 구현 안됨
+                    if (target) diff = target._id.length - word._id.length;
+                    else diff = 99;
+                    if (diff == 0) {
+                        // 같은 길이의 단어면 1/16으로 단어를 바꿈
+                        if (Math.random() * 16 >= 1)
+                            continue;
+                    } else if (diff <= 5) {
+                        // 단어 길이 차가 적으면 1/(8-차이)로 단어 변경 안함
+                        if (Math.random() * (8 - diff) < 1)
+                            continue;
+                    }
+                    target = word;
+                    // 1/30으로 더 긴 단어를 찾지 않고 그대로 입력
+                    if (Math.random() * 30 < 1) break;
+                }
+            }
+        }
+        if (target) {
+            text = target._id;
+            delay += 500 * ROBOT_THINK_COEF[level] * Math.random() / Math.log(1.1 + target.hit);
             after();
         } else denied();
     }

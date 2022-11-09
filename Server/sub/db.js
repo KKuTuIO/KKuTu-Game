@@ -20,7 +20,7 @@ const LANG = ["ko", "en"];
 
 import * as pgPool from 'pg-pool';
 import GLOBAL from "./global.json" assert { type: "json" };
-import { KOR_GROUP, ENG_ID } from "../const.js";
+import { KOR_GROUP, ENG_ID, IJP_EXCEPT } from "../const.js";
 import * as IOLog from "./KKuTuIOLog.js";
 import { Agent } from "./collection.js";
 import { Tail } from "./lizard.js";
@@ -73,6 +73,7 @@ export let users;
 export let SUBMIT_WORD_CACHE;
 export let MANNER_CACHE;
 export let SPC_MANNER_CACHE;
+export let THEME_CACHE;
 export let shop;
 export let refreshWordcache;
 export let refreshShopcache;
@@ -107,9 +108,10 @@ function connectPg(noRedis) {
         session = new mainAgent.Table("session");
         users = new mainAgent.Table("users");
 
-        SUBMIT_WORD_CACHE = {'ko': {}, 'en': {}};
+        SUBMIT_WORD_CACHE = {'ko': {}, 'en': {}}; // 단어 캐시
         MANNER_CACHE = {'ko': {}, 'en': {}}; // 일반 매너 캐시
         SPC_MANNER_CACHE = {'ko': {}, 'en': {}}; // 쿵쿵따, 끄투 매너 캐시
+        THEME_CACHE = {'ko': {}, 'en': {}}
         shop = {};
 
         refreshWordcache = function() {
@@ -119,13 +121,22 @@ function connectPg(noRedis) {
                 let newCache = {};
                 let newManner = {};
                 let newSpcManner = {};
+                let newTheme = {};
                 for (let resIndex in $res) {
                     const data = $res[resIndex];
                     const _id = data['_id'];
                     const flag = data['flag'];
-                    const hbw = data['theme'].split(',').includes('HBW');
+                    const theme = data['theme'].split(',');
+                    const hbw = theme.includes('HBW');
                     
                     newCache[_id] = data;
+
+                    // 주제별 캐싱, 선택 불가능 주제는 기록하지 않음
+                    for (let t of theme) {
+                        if (IJP_EXCEPT.includes(t)) continue;
+                        if (!newTheme.hasOwnProperty(t)) newTheme[t] = [];
+                        newTheme[t].push(data);
+                    }
 
                     if (!data['type'].match(KOR_GROUP)) continue; // 클래식에서 사용 불가능한 단어
 
@@ -170,22 +181,33 @@ function connectPg(noRedis) {
                 SUBMIT_WORD_CACHE['ko'] = newCache;
                 MANNER_CACHE['ko'] = newManner;
                 SPC_MANNER_CACHE['ko'] = newSpcManner;
+                THEME_CACHE['ko'] = newTheme;
 
                 IOLog.info(`${Object.keys(SUBMIT_WORD_CACHE['ko']).length} 개의 한국어 단어 데이터를 메모리에 불러왔습니다.`)
-                IOLog.info(`${Object.keys(MANNER_CACHE['ko']).length} 개의 한국어 일반 매너 데이터를 메모리에 불러왔습니다.`)
-                IOLog.info(`${Object.keys(SPC_MANNER_CACHE['ko']).length} 개의 한국어 특수 매너 데이터를 메모리에 불러왔습니다.`)
+                IOLog.debug(`${Object.keys(MANNER_CACHE['ko']).length} 개의 한국어 일반 매너 데이터를 메모리에 불러왔습니다.`)
+                IOLog.debug(`${Object.keys(SPC_MANNER_CACHE['ko']).length} 개의 한국어 특수 매너 데이터를 메모리에 불러왔습니다.`)
+                IOLog.debug(`${Object.keys(THEME_CACHE['ko']).length} 개의 한국어 주제 데이터를 메모리에 불러왔습니다.`)
             });
 
             kkutu['en'].find(['_id', ENG_ID]).on($res => {
                 let newCache = {};
                 let newManner = {};
                 let newSpcManner = {};
+                let newTheme = {};
                 for (let resIndex in $res) {
                     const data = $res[resIndex];
                     const _id = data['_id'];
                     const flag = data['flag'];
+                    const theme = data['theme'].split(',');
                     
                     newCache[_id] = data;
+
+                    // 주제별 캐싱, 선택 불가능 주제는 기록하지 않음
+                    for (let t of theme) {
+                        if (IJP_EXCEPT.includes(t)) continue;
+                        if (!newTheme.hasOwnProperty(t)) newTheme[t] = [];
+                        newTheme[t].push(data);
+                    }
 
                     if (!_id.match(ENG_ID)) continue; // 클래식에서 사용 불가능한 단어
 
@@ -222,10 +244,12 @@ function connectPg(noRedis) {
                 SUBMIT_WORD_CACHE['en'] = newCache;
                 MANNER_CACHE['en'] = newManner;
                 SPC_MANNER_CACHE['en'] = newSpcManner;
+                THEME_CACHE['en'] = newTheme;
 
                 IOLog.info(`${Object.keys(SUBMIT_WORD_CACHE['en']).length} 개의 영어 단어 데이터를 메모리에 불러왔습니다.`)
-                IOLog.info(`${Object.keys(MANNER_CACHE['en']).length} 개의 영어 일반 매너 데이터를 메모리에 불러왔습니다.`)
-                IOLog.info(`${Object.keys(SPC_MANNER_CACHE['en']).length} 개의 영어 특수 매너 데이터를 메모리에 불러왔습니다.`)
+                IOLog.debug(`${Object.keys(MANNER_CACHE['en']).length} 개의 영어 일반 매너 데이터를 메모리에 불러왔습니다.`)
+                IOLog.debug(`${Object.keys(SPC_MANNER_CACHE['en']).length} 개의 영어 특수 매너 데이터를 메모리에 불러왔습니다.`)
+                IOLog.debug(`${Object.keys(THEME_CACHE['en']).length} 개의 영어 주제 데이터를 메모리에 불러왔습니다.`)
             });
         };
 

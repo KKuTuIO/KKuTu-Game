@@ -451,7 +451,7 @@ export function readyRobot (robot) {
                 if (ROBOT_HIT_LIMIT[level] > word.hit) continue;
                 if (my.game.chain.includes(word._id)) continue;
                 if (!target || target._id.length <= word._id.length) {
-                    if (firstMove && word._id.length > 20) continue;
+                    if (firstMove && word._id.length > 15) continue;
                     if (target) diff = target._id.length - word._id.length;
                     else diff = 99;
                     if (diff == 0) {
