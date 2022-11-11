@@ -43,12 +43,12 @@ const DAY = 86400000;
 const WEEK = DAY * 7;
 
 const STARTING_YEAR = 2022;
-const STARTING_MONTH = 10;
-const STARTING_DATE = 9;
+const STARTING_MONTH = 11;
+const STARTING_DATE = 14;
 const STARTING_HOUR = 4;
 
-const WP_DROP_DAYS = 7;
-const WP_EXPIRE_GRACE_PERIOD_IN_DAYS = 14;
+const WP_DROP_DAYS = 5;
+const WP_EXPIRE_GRACE_PERIOD_IN_DAYS = 5;
 
 // 테스트용, 켜두면 관리자는 항상 이벤트 조각을 얻을 수 있음
 export const EVENT_FORCE_FOR_ADMIN = false;
