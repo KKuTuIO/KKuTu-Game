@@ -1,4 +1,4 @@
-import fetch, { FormData } from 'node-fetch'
+import fetch from 'node-fetch';
 import GLOBAL from "./global.json" assert { type: "json" };
 
 export default function verifyCaptcha (responseToken, remoteIp, callback) {
@@ -11,8 +11,8 @@ export default function verifyCaptcha (responseToken, remoteIp, callback) {
 
     fetch(verifyUrl, { method: 'POST', body: formData }).then(safeParseResponse)
 
-    async function safeParseResponse(response) {
-        const body = await response.text();
+    function safeParseResponse(response) {
+        const body = response.text();
         try {
             const responseBody = JSON.parse(body);
             callback(responseBody.success);
