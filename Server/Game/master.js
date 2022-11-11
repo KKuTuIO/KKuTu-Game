@@ -53,6 +53,7 @@ let allowLobbyChat = true;
 let allowGuestEnter = true;
 let allowEnter = true;
 let allowRoomCreate = true;
+let alwaysTriggerCaptcha = GLOBAL.CAPTCHA_TO_USER;
 
 export let XPMultiplier;
 export let MoneyMultiplier;
@@ -291,6 +292,19 @@ function processAdmin(id, value) {
 
                 DIC[id].send('chat', {notice: true, message: '채널의 계정의 출입을 활성화했습니다.'});
                 IOLog.notice(`${id} 님이 채널의 출입을 활성화했습니다.`);
+            }
+            return null;
+        case 'captcha':
+            if(alwaysTriggerCaptcha) {
+                alwaysTriggerCaptcha = false;
+
+                DIC[id].send('chat', {notice: true, message: 'CAPTCHA 인증 대상을 "손님 계정"(으)로 설정하였습니다.'});
+                IOLog.notice(`${id} 님이 CAPTCHA 인증 대상을 "손님 계정"(으)로 설정하였습니다.`);
+            } else {
+                alwaysTriggerCaptcha = true;
+
+                DIC[id].send('chat', {notice: true, message: 'CAPTCHA 인증 대상을 "모든 계정"(으)로 설정하였습니다.'});
+                IOLog.notice(`${id} 님이 CAPTCHA 인증 대상을 "모든 계정"(으)로 설정하였습니다.`);
             }
             return null;
         case "refreshword":
@@ -594,7 +608,7 @@ export async function init (_SID, _CHAN) {
                         DNAME[($c.profile.title || $c.profile.name).replace(/\s/g, "")] = $c.id;
                         MainDB.users.update(['_id', $c.id]).set(['server', SID]).on();
 
-                        if (($c.guest && GLOBAL.CAPTCHA_TO_GUEST) || GLOBAL.CAPTCHA_TO_USER) {
+                        if (($c.guest && GLOBAL.CAPTCHA_TO_GUEST) || alwaysTriggerCaptcha) {
                             $c.socket.send(JSON.stringify({
                                 type: 'captcha',
                                 siteKey: GLOBAL.CAPTCHA_SITE_KEY
