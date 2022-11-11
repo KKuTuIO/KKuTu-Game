@@ -9,13 +9,15 @@ export default async function verifyCaptcha (responseToken, remoteIp, callback) 
     formData.set('response', responseToken);
     formData.set('remoteip', remoteIp);
 
-    const response = await fetch(verifyUrl, { method: 'POST', body: formData })
-    const data = await response.json()
+    fetch(verifyUrl, { method: 'POST', body: formData }).then(safeParseResponse)
 
-    try {
-        const responseBody = JSON.parse(data);
-        callback(responseBody.success);
-    } catch (e) {
-        callback(false);
+    async function safeParseResponse(response) {
+        const body = await response.text();
+        try {
+            const responseBody = JSON.parse(body);
+            callback(responseBody.success);
+        } catch (err) {
+            callback(false);
+        }
     }
 }
