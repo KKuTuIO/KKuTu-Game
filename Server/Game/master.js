@@ -27,7 +27,7 @@ import { DISCORD_WEBHOOK, GAME_TYPE, IS_WS_SECURED,
     TEST_PORT, KKUTU_MAX, TESTER } from "../const.js";
 import * as IOLog from '../sub/KKuTuIOLog.js';
 import Secure from '../sub/secure.js';
-import Captcha from '../sub/captcha.js';
+import { verifyCaptcha } from '../sub/captcha.js';
 import { requestLastRelay, waitACinit, processSuspicion } from '../sub/utils/AntiCheat.js';
 import { initUserRating } from '../sub/utils/UserRating.js';
 import { processUserNickChange } from "../sub/UserNickChange.js";
@@ -710,7 +710,7 @@ KKuTu.onClientMessage(function ($c, msg) {
 
     if (!$c.passCaptcha) {
         if (msg.type === 'captcha') {
-            Captcha(msg.token, $c.socket._socket.remoteAddress, function (success) {
+            verifyCaptcha(msg.token, $c.socket._socket.remoteAddress, function (success) {
                 if (success) {
                     $c.passCaptcha = true;
 
