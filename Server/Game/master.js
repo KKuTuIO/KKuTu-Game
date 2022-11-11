@@ -27,7 +27,7 @@ import { DISCORD_WEBHOOK, GAME_TYPE, IS_WS_SECURED,
     TEST_PORT, KKUTU_MAX, TESTER } from "../const.js";
 import * as IOLog from '../sub/KKuTuIOLog.js';
 import Secure from '../sub/secure.js';
-import Recaptcha from '../sub/recaptcha.js';
+import Captcha from '../sub/captcha.js';
 import { requestLastRelay, waitACinit, processSuspicion } from '../sub/utils/AntiCheat.js';
 import { initUserRating } from '../sub/utils/UserRating.js';
 import { processUserNickChange } from "../sub/UserNickChange.js";
@@ -594,13 +594,13 @@ export async function init (_SID, _CHAN) {
                         DNAME[($c.profile.title || $c.profile.name).replace(/\s/g, "")] = $c.id;
                         MainDB.users.update(['_id', $c.id]).set(['server', SID]).on();
 
-                        if (($c.guest && GLOBAL.GOOGLE_RECAPTCHA_TO_GUEST) || GLOBAL.GOOGLE_RECAPTCHA_TO_USER) {
+                        if (($c.guest && GLOBAL.CAPTCHA_TO_GUEST) || GLOBAL.CAPTCHA_TO_USER) {
                             $c.socket.send(JSON.stringify({
-                                type: 'recaptcha',
-                                siteKey: GLOBAL.GOOGLE_RECAPTCHA_SITE_KEY
+                                type: 'captcha',
+                                siteKey: GLOBAL.CAPTCHA_SITE_KEY
                             }));
                         } else {
-                            $c.passRecaptcha = true;
+                            $c.passCaptcha = true;
 
                             joinNewUser($c);
                         }
@@ -708,17 +708,17 @@ KKuTu.onClientMessage(function ($c, msg) {
         return;
     }
 
-    if (!$c.passRecaptcha) {
-        if (msg.type === 'recaptcha') {
-            Recaptcha(msg.token, $c.socket._socket.remoteAddress, function (success) {
+    if (!$c.passCaptcha) {
+        if (msg.type === 'captcha') {
+            Captcha(msg.token, $c.socket._socket.remoteAddress, function (success) {
                 if (success) {
-                    $c.passRecaptcha = true;
+                    $c.passCaptcha = true;
 
                     joinNewUser($c);
 
                     processClientRequest($c, msg);
                 } else {
-                    IOLog.warn(`${$c.socket._socket.remoteAddress} 아이피에서 Recaptcha 인증에 실패했습니다.`);
+                    IOLog.warn(`${$c.socket._socket.remoteAddress} 아이피에서 CAPTCHA 인증에 실패했습니다.`);
 
                     $c.sendError(447);
                     $c.socket.close();
