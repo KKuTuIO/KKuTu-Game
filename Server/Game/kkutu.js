@@ -2073,6 +2073,10 @@ function getRewards(mode, score, bonus, rank, all, ss) {
     if (all < 2) {
         rw.score = rw.score * 0.4;
         rw.money = rw.money * 0.4;
+    } else if (all < 4) {
+        rw.score = rw.score * 0.9;
+        rw.money = rw.money * 0.9;
+        rw.together = true;
     } else {
         rw.together = true;
     }
