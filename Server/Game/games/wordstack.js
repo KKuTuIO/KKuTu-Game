@@ -19,7 +19,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { KOR_FLAG, KOR_STRICT, KOR_GROUP, ENG_ID } from '../../const.js';
+import { KOR_FLAG, KOR_STRICT, KOR_GROUP, ENG_ID, WPE_CHECK } from '../../const.js';
 import { Tail, all as LizardAll } from '../../sub/lizard.js';
 import { DB, DIC, getChar, getSubChar, getPreScore, getMission, getRandom,
     getWordList, ROBOT_START_DELAY, ROBOT_HIT_LIMIT, ROBOT_LENGTH_LIMIT,
@@ -195,7 +195,7 @@ export function submit (client, text){
                 // setTimeout(my.turnNext, my.game.turnTime / 6);
                 if(!client.robot){
                     client.invokeWordPiece(text, 1);
-                    if (client.game.wpe !== undefined && $doc && Const.WPE_CHECK(my.rule.lang, $doc.theme))
+                    if (client.game.wpe !== undefined && $doc && WPE_CHECK(my.rule.lang, $doc.theme))
                         client.invokeEventPiece(text, 1);
                     DB.kkutu[l].update([ '_id', text ]).set([ 'hit', $doc.hit + 1 ]).on();
                 }
