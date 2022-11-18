@@ -870,7 +870,7 @@ export function Client (socket, profile, sid) {
                     } else if (curr.from == "dict") {
                         while (r-- > 0) {
                             let base = (curr.type == "money" ? my.money : my.data.score);
-                            addResult(curr.type, Math.round(Math.sqrt(1 + 2 * base)));
+                            addResult(curr.type, Math.round(Math.sqrt(4 + 3.6 * base) / 2));
                         }
                     }
                 }
