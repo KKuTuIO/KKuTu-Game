@@ -1823,9 +1823,9 @@ export function Room (room, channel) {
             if (!my.practice && rw.together) {
                 o.data.record[Const.GAME_TYPE[my.mode]][0]++;
                 if (res[i].rank == 0) o.data.record[Const.GAME_TYPE[my.mode]][1]++;
+                rewardRating(o, pv);
             }
             users[o.id] = o.getData();
-            rewardRating(o, pv);
             suv.push(o.flush(true, false, false, true));
         }
         LizardAll(suv).then(function (uds) {
