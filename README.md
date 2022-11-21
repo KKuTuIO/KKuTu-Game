@@ -11,7 +11,7 @@
 > 아울러, 끄투리오의 소스 코드는 기존 KKuTu 소스 코드와 달리 [Affero GPL 3.0](https://github.com/KKuTuIO/KKuTu-Game/blob/public/LICENSE)으로 배포되며, 소스 코드의 공개 및 출처 표기가 의무화되어 있습니다. 자세한 사항은 라이선스를 확인해주시기 바랍니다.
 
 ## 추가 소스 코드 이용 조항
-### HTTP(S) 혹은 웹 소켓(Websocket) 또는 응답 전송 의무
+### HTTP(S) 혹은 웹 소켓(Websocket)으로의 응답 전송 의무
 **[Affero GPL 3.0](https://github.com/KKuTuIO/KKuTu-Game/blob/public/LICENSE)으로 배포되는 코드의 일부 혹은 전체를 사용하였을 경우, HTTP(S) 혹은 Websocket 프로토콜을 사용하여 최소 1회 이상 다음 응답을 JSON으로 클라이언트에게 전송해야 합니다.**
 ```json
 {
@@ -36,7 +36,7 @@
 단, 별도의 저작권 고지 페이지를 만들어 이를 링크하는 것으로 대체하는 행위는 허용됩니다.
 
 
-<hr/>
+<hr/>ㅎ
 
 - Made by [JJoriping](http://blog.jjo.kr/)
 - Special thanks to
