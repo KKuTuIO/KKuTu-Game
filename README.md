@@ -36,7 +36,7 @@
 단, 별도의 저작권 고지 페이지를 만들어 이를 링크하는 것으로 대체하는 행위는 허용됩니다.
 
 
-<hr/>ㅎ
+<hr/>
 
 - Made by [JJoriping](http://blog.jjo.kr/)
 - Special thanks to
