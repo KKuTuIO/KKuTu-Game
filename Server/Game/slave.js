@@ -427,6 +427,13 @@ KKuTu.onClientMessage(function ($c, msg) {
 
             ROOM[$c.place].setAI(msg.target, Math.round(msg.level), Math.round(msg.team));
             break;
+        case 'useItem':
+            if ($c.subPlace) temp = $c.pracRoom;
+            else if (!(temp = ROOM[$c.place])) return;
+            if (!temp.gaming) return;
+            if (!temp.game.loading) {
+                temp.useItem($c, msg.id);
+            }
         default:
             break;
     }

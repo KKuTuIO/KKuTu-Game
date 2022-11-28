@@ -1711,7 +1711,7 @@ export function Room (room, channel) {
     };
     my.roundReady = function () {
         if (!my.gaming) return;
-
+        if (!my.game.seq || my.game.seq.length < 2) return my.roundEnd();
         return my.route("roundReady");
     };
     my.interrupt = function () {
@@ -1887,7 +1887,7 @@ export function Room (room, channel) {
     };
     my.turnStart = function (force) {
         if (!my.gaming) return;
-
+        if (!my.game.seq || my.game.seq.length < 2) return my.roundEnd();
         return my.route("turnStart", force);
     };
     my.readyRobot = function (robot) {
@@ -1904,8 +1904,21 @@ export function Room (room, channel) {
     my.turnNext = function (force) {
         if (!my.gaming) return;
         if (!my.game.seq) return;
-
-        my.game.turn = (my.game.turn + 1) % my.game.seq.length;
+        let additional = 0;
+        if (my.game.queue) {
+            /* queue가..
+             * 1이면 다음 사람 건너뜀
+             * -1이면 턴을 넘기지 않음
+             */
+            additional = my.game.queue;
+            my.game.queue = 0;
+        }
+        if (my.game.rev) { // 역방향 진행인 경우
+            my.game.turn = my.game.turn - 1 + my.game.seq.length - additional; // 인덱싱이 넘어가지 않도록
+        } else {
+            my.game.turn = my.game.turn + 1 + additional;
+        }
+        my.game.turn = my.game.turn % my.game.seq.length;
         my.turnStart(force);
     };
     my.turnEnd = function () {
@@ -1914,6 +1927,9 @@ export function Room (room, channel) {
     my.submit = function (client, text, data) {
         return my.route("submit", client, text, data);
     };
+    my.useItem = function (client, id) {
+        return my.route("useItem", client, id);
+    }
     my.getScore = function (text, delay, ignoreMission) {
         return my.routeSync("getScore", text, delay, ignoreMission);
     };

@@ -357,6 +357,22 @@ export function getThemeWords (theme) {
     if (CACHE.hasOwnProperty(theme)) return CACHE[theme];
 }
 
+export function getRandomChar () {
+    let my = this;
+    let mode = Const.GAME_TYPE[my.mode];
+    let isSpc = (mode == "EKT" || mode == "KKT")
+    let MAN = (isSpc ? DB.SPC_MANNER_CACHE : DB.MANNER_CACHE)[my.rule.lang];
+    let chars = Object.keys(MAN);
+    let tries = 20;
+    let target, sub, count;
+    do {
+        target = getRandom(chars);
+        sub = getSubChar.call(my, target);
+        count = getWordList.call(my, target, sub).length;
+        if (count > 5) return target;
+    } while (tries--)
+}
+
 const log05 = Math.log(0.5);
 
 export function getPreScore (text, chainArr, tr) {
