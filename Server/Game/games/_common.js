@@ -365,6 +365,7 @@ export function getRandomChar () {
     let target, sub, count;
     do {
         target = getRandom(chars);
+        if (mode == "EKT" && target.length != 3) continue;
         sub = getSubChar.call(my, target);
         count = getWordList.call(my, target, sub).length;
         if (count > 5) return target;
