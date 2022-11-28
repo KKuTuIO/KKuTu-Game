@@ -293,10 +293,8 @@ export function getWordList(char, subc, iij) {
     let R = new MultiArray();
 
     if (mode == "EKT" || mode == "KKT") {
-        if (mode == "EKT" && char.length == 1) {
-            return [0]; // 끄투 첫번째 턴은 무조건 넘어가도록
-        }
-        return getSpcWordList.call(my, char, subc, iij);
+        if (mode != "EKT" || char.length != 1)
+            return getSpcWordList.call(my, char, subc, iij);
     }
 
     let baseIndex = (mode == "KAP" || mode == "EAP") ? 1 : 0;
