@@ -438,7 +438,7 @@ export function useItem (client, id) {
 
             if (!denied) {
                 my.game.char = newChar;
-                my.game.subchar = getSubChar.call(my. newChar)
+                my.game.subchar = getSubChar.call(my, newChar)
                 my.game.queue = -1;
                 isTurnEnd = true;
             }
