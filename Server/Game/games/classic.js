@@ -417,7 +417,7 @@ export function useItem (client, id) {
         case 2: // 뒤로 - 턴 순서를 반대로 만듦
             my.game.rev = !my.game.rev;
             break;
-        case 3: // 토스 - 랜덤 제시어로 변경 (단, 쿵쿵따는 가운데 글자로 바꿈)
+        case 3: // 넘기기 - 랜덤 제시어로 변경 (단, 쿵쿵따는 가운데 글자로 바꿈)
             let newChar;
             if (Const.GAME_TYPE[my.mode] == 'KKT') {
                 // 쿵쿵따 전용처리
