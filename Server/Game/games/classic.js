@@ -310,7 +310,7 @@ export function submit (client, text) {
 
             let deniedWith = 0;
             do {
-                if (firstMove && text.length > 20) {
+                if (firstMove && text.length > 30) {
                     deniedWith = 410;
                     break;
                 }
