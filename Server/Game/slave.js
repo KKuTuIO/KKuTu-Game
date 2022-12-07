@@ -279,8 +279,8 @@ KKuTu.onClientMessage(function ($c, msg) {
             if (isNaN(msg.time)) stable = false;
 
             if (stable) {
-                if (msg.title.length > 20) stable = false;
-                if (msg.password.length > 20) stable = false;
+                if (msg.title.length > 24) stable = false;
+                if (msg.password.length > 32) stable = false;
                 if (!$c.admin && (msg.limit < 2 || msg.limit > 8)) {
                     msg.code = 432;
                     stable = false;

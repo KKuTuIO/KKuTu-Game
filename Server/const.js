@@ -192,7 +192,7 @@ export const RULE = {
     'KAP': {// 한국어 앞말잇기
         lang: "ko",
         rule: "Classic",
-        opts: ["man", "saf", "ext", "mis", "loa", "str", "beg", "nog", "rms", "tct", "rnk", "itm"],
+        opts: ["man", "saf", "gnt", "ext", "mis", "loa", "str", "beg", "nog", "rms", "tct", "rnk", "itm"],
         time: 1,
         ai: true,
         big: false,
