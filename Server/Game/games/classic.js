@@ -434,7 +434,7 @@ export function useItem (client, id) {
                     break;
                 }
                 let lastword = my.game.chain[chainlen - 1];
-                newChar = lastword.charAt(lastword.length - 1); // 3글자면 2번째, 2글자면 1번째 글자로 제시어 변경
+                newChar = lastword.charAt(lastword.length - 2); // 3글자면 2번째, 2글자면 1번째 글자로 제시어 변경
 
                 let count = getWordList.call(my, newChar, getSubChar.call(my, newChar), true).length;
                 if (count < 5) denied = true;
