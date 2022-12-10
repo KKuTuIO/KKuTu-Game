@@ -154,11 +154,13 @@ export function roundReady () {
                 my.game.item = {};
                 my.game.used = {};
                 my.game.rev = false;
+                my.game.ilock = false;
             }
             for (o of my.game.seq) {
                 let t = o.robot ? o.id : o;
                 my.game.item[t] = [0, 0, 0, 0, 0];
                 my.game.used[t] = 0;
+                my.game.ilock = false;
             }
         }
 
@@ -189,6 +191,7 @@ export function turnStart (force) {
     if (my.opts.sami) my.game.wordLength = (my.game.wordLength == 3) ? 2 : 3;
     if (my.opts.mission && my.opts.randmission) my.game.mission = getMission(my.rule.lang, my.opts.tactical);
     my.game.random = false;
+    my.game.ilock = false;
 
     my.byMaster('turnStart', {
         turn: my.game.turn,
@@ -411,6 +414,7 @@ export function useItem (client, id) {
 
     if (!mgt) return;
     if (uid != client.id) return;
+    if (my.game.ilock) return client.publish('turnError', {code: 428}, true); // 아이템 연속사용
     if (my.game.used[uid] >= 5 || firstMove) return client.publish('turnError', {code: 420}, true); // 사용횟수 초과 or 아이템 횟수초과
     if (my.game.item[uid][id] >= 2) return client.publish('turnError', {code: 429}, true); // 중복사용 초과
 
@@ -462,6 +466,7 @@ export function useItem (client, id) {
     }
     my.game.used[uid]++;
     my.game.item[uid][id]++;
+    my.game.ilock = true;
     client.publish('useItem', {
         item: id,
         isEnd: isTurnEnd
