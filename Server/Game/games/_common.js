@@ -355,12 +355,27 @@ export function getThemeWords (theme) {
     if (CACHE.hasOwnProperty(theme)) return CACHE[theme];
 }
 
-export function getRandomChar () {
+export function getRandomChar (text) {
     let my = this;
     let mode = Const.GAME_TYPE[my.mode];
     let isSpc = (mode == "EKT" || mode == "KKT")
-    let MAN = (isSpc ? DB.SPC_MANNER_CACHE : DB.MANNER_CACHE)[my.rule.lang];
-    let chars = Object.keys(MAN);
+    let chars = [];
+    if (!text) {
+        let MAN = (isSpc ? DB.SPC_MANNER_CACHE : DB.MANNER_CACHE)[my.rule.lang];
+        chars = Object.keys(MAN);
+    } else {
+        if (mode == "KKT") { // 쿵쿵따는 항상 끝 글자의 앞 글자 반환
+            chars = [text.charAt(text.length - 2)]
+        } else if (mode == "EKT") {
+            for (var i in text) {
+                let c = text.slice(i, i + 3);
+                if (c.length == 3) chars.push(c);
+                else break;
+            }
+        } else {
+            chars = [...text];
+        }
+    }
     let tries = 20;
     let target, sub, count;
     do {

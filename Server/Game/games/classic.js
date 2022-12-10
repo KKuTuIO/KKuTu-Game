@@ -188,6 +188,7 @@ export function turnStart (force) {
     my.game.turnAt = (new Date()).getTime();
     if (my.opts.sami) my.game.wordLength = (my.game.wordLength == 3) ? 2 : 3;
     if (my.opts.mission && my.opts.randmission) my.game.mission = getMission(my.rule.lang, my.opts.tactical);
+    my.game.random = false;
 
     my.byMaster('turnStart', {
         turn: my.game.turn,
@@ -256,7 +257,13 @@ export function submit (client, text) {
 
     function onDB($doc) {
         if (!my.game.chain) return;
-        let preChar = getChar.call(my, text);
+        let preChar;
+        if (my.game.random) {
+            preChar = getRandomChar.call(my, text)
+        } else {
+            preChar = getChar.call(my, text);
+        }
+        if (!preChar) return;
         let preSubChar = getSubChar.call(my, preChar);
         let firstMove = my.game.chain.length < 1;
         let mode = Const.GAME_TYPE[my.mode];
@@ -395,11 +402,11 @@ export function submit (client, text) {
 
 export function useItem (client, id) {
     let my = this;
-    if (id < 0 || id > 4) return; // 없는 아이템
+    if (id < 0 || id > 5) return; // 없는 아이템
     let mgt = my.game.seq[my.game.turn];
     let uid = mgt.robot ? mgt.id : mgt;
     let firstMove = my.game.chain.length < 1;
-    let isTurnEnd = false;
+    let isTurnEnd = true;
     let denied = false;
 
     if (!mgt) return;
@@ -409,7 +416,6 @@ export function useItem (client, id) {
 
     switch (id) {
         case 0: // 넘기기 - 다음 사람으로 턴으로 넘김
-            isTurnEnd = true;
             break;
         case 1: // 건너뛰기 - 다음 사람의 턴을 넘김
             my.game.queue = 1;
@@ -417,7 +423,8 @@ export function useItem (client, id) {
         case 2: // 뒤로 - 턴 순서를 반대로 만듦
             my.game.rev = !my.game.rev;
             break;
-        case 3: // 넘기기 - 랜덤 제시어로 변경 (단, 쿵쿵따는 가운데 글자로 바꿈)
+        case 3: // 제시어 변경 - 랜덤 제시어로 변경 (단, 쿵쿵따는 가운데 글자로 바꿈)
+            isTurnEnd = true;
             let newChar;
             if (Const.GAME_TYPE[my.mode] == 'KKT') {
                 // 쿵쿵따 전용처리
@@ -440,12 +447,15 @@ export function useItem (client, id) {
                 my.game.char = newChar;
                 my.game.subChar = getSubChar.call(my, newChar)
                 my.game.queue = -1;
-                isTurnEnd = true;
             }
             break;
         case 4: // 한번 더 - 단어를 한번 더 입력함
+            isTurnEnd = false;
             my.game.queue = -1;
             break;
+        case 5: // 무작위 - 무작위 글자를 넘겨줍니다. 쿵쿵따에서는 가운데 글자로 넘겨줍니다.
+            isTurnEnd = false;
+            my.game.random = true;
     }
     if (denied) {
         return client.publish('turnError', {code: 420}, true);
@@ -485,7 +495,7 @@ export function readyRobot (robot) {
     let mode = Const.GAME_TYPE[my.mode];
     let isRev = mode == "KAP" || mode == "EAP" || mode == "JAP";
     let list = getWordList.call(my, my.game.char, my.game.subChar, true)
-    if (list.length) {
+    if (list && list.length) {
         let highestHit = 0;
         for (word of list) {
             if (highestHit < word.hit) highestHit = word.hit;
@@ -493,14 +503,16 @@ export function readyRobot (robot) {
         }
         if (ROBOT_HIT_LIMIT[level] > highestHit) denied();
         else {
-            if (level >= 3 && !my.game.chain.length) {
+            if (level >= 3 && (!my.game.chain || !my.game.chain.length)) {
                 let longestLen = 0;
                 for (word of list) {
+                    if (!word || !word._id) continue;
                     if (longestLen < word._id.length) longestLen = word._id.length
                     if (longestLen >= 8) break;
                 }
                 if (longestLen < 8 && my.game.turnTime >= 2300) {
                     for (word of list) {
+                        if (!word || !word._id) continue;
                         c = word._id.charAt(isRev ? 0 : (word._id.length - 1));
                         if (!ended.hasOwnProperty(c)) ended[c] = [];
                         ended[c].push(word);
