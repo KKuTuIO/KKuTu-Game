@@ -414,7 +414,7 @@ export function useItem (client, id) {
 
     if (!mgt) return;
     if (uid != client.id) return;
-    if (my.game.ilock) return client.publish('turnError', {code: 428}, true); // 아이템 연속사용
+    if (my.game.ilock) return client.publish('turnError', {code: 420}, true); // 아이템 연속사용
     if (my.game.used[uid] >= 5 || firstMove) return client.publish('turnError', {code: 420}, true); // 사용횟수 초과 or 아이템 횟수초과
     if (my.game.item[uid][id] >= 2) return client.publish('turnError', {code: 429}, true); // 중복사용 초과
 
