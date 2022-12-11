@@ -55,8 +55,8 @@ let allowEnter = true;
 let allowRoomCreate = true;
 let alwaysTriggerCaptcha = GLOBAL.CAPTCHA_TO_USER;
 
-export let XPMultiplier;
-export let MoneyMultiplier;
+export let XPMultiplier = 1;
+export let MoneyMultiplier = 1;
 
 export const DEVELOP = global.test || false;
 export const GUEST_PERMISSION = {
@@ -217,7 +217,7 @@ function processAdmin(id, value) {
             temp = parseFloat(value);
             if(!MoneyMultiplier) return;
             MoneyMultiplier = temp;
-            DIC[id].send('notice', {value: `핑 배율은 이제 ${XPMultiplier}배입니다.`})
+            DIC[id].send('notice', {value: `핑 배율은 이제 ${MoneyMultiplier}배입니다.`})
             return null;
         case "flushguest":
             try {
