@@ -472,7 +472,10 @@ export function useItem (client, id) {
         isEnd: isTurnEnd
     }, true);
     // 아이템 사용으로 턴이 종료됨 or 턴을 다시 시작해야함
-    if (isTurnEnd) setTimeout(my.turnNext, my.game.turnTime / 6);
+    if (isTurnEnd) {
+        my.game.late = true;
+        setTimeout(my.turnNext, my.game.turnTime / 6);
+    }
 }
 
 export function getScore (text, delay, ignoreMission) {
