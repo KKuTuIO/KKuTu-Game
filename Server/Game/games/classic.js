@@ -406,6 +406,7 @@ export function submit (client, text) {
 export function useItem (client, id) {
     let my = this;
     if (id < 0 || id > 5) return; // 없는 아이템
+    if (my.game.late) return;
     let mgt = my.game.seq[my.game.turn];
     let uid = mgt.robot ? mgt.id : mgt;
     let firstMove = my.game.chain.length < 1;
