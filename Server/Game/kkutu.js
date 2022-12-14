@@ -1652,6 +1652,7 @@ export function Room (room, channel) {
         my.game.turn = 0;
         my.game.seq = [];
         my.game.robots = [];
+        my.game.rev = false;
         if (my.practice) {
             my.game.robots.push(o = new Robot(my.master, my.id, pracLevel));
             my.game.seq.push(o, my.master);
