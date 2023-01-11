@@ -79,7 +79,7 @@ export let shop;
 let ready;
 
 function connectPg(noRedis) {
-    Pg.connect(function (err, pgMain) {
+    Pg.connect(async function (err, pgMain) {
         if (err) {
             IOLog.error("Error when connect to PostgreSQL server: " + err.toString());
             return;
@@ -112,8 +112,8 @@ function connectPg(noRedis) {
         THEME_CACHE = {'ko': {}, 'en': {}}
         shop = {};
 
-        refreshWordcache();
-        refreshShopcache();
+        await refreshWordcache();
+        await refreshShopcache();
 
         ConnectionLog.initDatabase(pgMain);
         UserBlockModule.initDatabase(pgMain);
@@ -167,7 +167,7 @@ function getMannerTemplate (len) {
     return R;
 }
 
-export function refreshWordcache () {
+export async function refreshWordcache () {
     IOLog.info(`단어 데이터를 메모리에 저장합니다...`)
 
     kkutu['ko'].find(['type', KOR_GROUP]).on($res => {
@@ -306,7 +306,7 @@ export function refreshWordcache () {
     });
 };
 
-export function refreshShopcache () {    
+export async function refreshShopcache () {    
     IOLog.info('아이템 데이터 갱신을 시작합니다...')
 
     kkutu_shop.find().on(function ($res) {
