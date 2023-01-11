@@ -67,6 +67,7 @@ export function roundReady (){
     my.game.round++;
     my.game.roundTime = my.time * 1000;
     if (my.game.round <= my.round) {
+        if (my.opts.mission) my.game.mission = getMission(my.rule.lang, my.opts.tactical);
         for (let k in my.game.seq) {
             let o = my.game.seq[k]
             let t = o.robot ? o.id : o
@@ -181,7 +182,7 @@ export function submit (client, text){
                     theme: $doc.theme,
                     wc: $doc.type,
                     score: score,
-                    // bonus: (my.game.mission === true) ? score - my.getScore.call(my, text, t, client.id, true) : 0,
+                    bonus: (my.game.mission === client.id) ? score - my.getScore.call(my, text, t, client.id, true) : 0,
                     baby: $doc.baby,
                     pool: pool,
                     subpool: getSubpool.call(my, pool),
@@ -189,7 +190,7 @@ export function submit (client, text){
                     otherpool: otherpool,
                     othersub: getSubpool.call(my, otherpool)
                 });
-                if(my.game.mission === true) {
+                if(my.game.mission === client.id) {
                     my.game.mission = getMission(my.rule.lang);
                 }
                 // setTimeout(my.turnNext, my.game.turnTime / 6);
@@ -271,11 +272,11 @@ export function getScore (text, delay, ignoreMission, clientId) {
     score = getPreScore(text, my.game.chain[clientId], tr);
 
     if (my.game.dic[text]) score *= 15 / (my.game.dic[text] + 15);
-    // 미션 미구현 상태
-    // if (!ignoreMission) if (arr = text.match(new RegExp(my.game.mission, "g"))) {
-    //     score += score * 0.5 * arr.length;
-    //     my.game.mission = true;
-    // }
+    
+    if (!ignoreMission && my.game.mission && my.game.mission.length == 1) if (arr = text.match(new RegExp(my.game.mission, "g"))) {
+        score += score * 0.5 * arr.length;
+        my.game.mission = clientId;
+    }
     return Math.round(score);
 }
 
