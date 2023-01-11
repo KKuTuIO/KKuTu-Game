@@ -317,7 +317,7 @@ export function readyRobot (robot){
                 }
                 if (longestLen < 8 && my.game.turnTime >= 2300) {
                     for (word of list) {
-                        c = word._id.charAt(isRev ? 0 : (word._id.length - 1));
+                        c = word._id.charAt(my.opts.reverse ? 0 : (word._id.length - 1));
                         if (!ended.hasOwnProperty(c)) ended[c] = [];
                         ended[c].push(word);
                     }

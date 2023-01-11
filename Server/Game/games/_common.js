@@ -90,6 +90,8 @@ export function getChar (text) {
         case 'EAP':
         case 'JAP':
             return text.charAt(0);
+        case 'KWS':
+            if (my.opts.reverse) return text.charAt(0);
         default:
             return text.slice(-1);
     }
@@ -297,7 +299,7 @@ export function getWordList(char, subc, iij) {
             return getSpcWordList.call(my, char, subc, iij);
     }
 
-    let baseIndex = (mode == "KAP" || mode == "EAP") ? 1 : 0;
+    let baseIndex = (mode == "KAP" || mode == "EAP" || my.opts.reverse) ? 1 : 0;
 
     if (!MAN.hasOwnProperty(char)) {
         // 처리 없음
