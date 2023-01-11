@@ -1027,6 +1027,10 @@ export function Client (socket, profile, sid) {
                 if (my.guest) return my.sendError(700);
                 else return my.sendError(702);
             }
+            if ($room.opts.etiquette && getRatingLevel(my) < 1) {
+                if (my.guest) return my.sendError(703);
+                else return my.sendError(704);
+            }
             if (!spec) {
                 if ($room.gaming) return my.send('error', {code: 416, target: $room.id});
                 else if (!GUEST_PERMISSION.enter) return my.sendError(401);
