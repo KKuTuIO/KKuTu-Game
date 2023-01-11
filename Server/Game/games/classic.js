@@ -416,8 +416,8 @@ export function useItem (client, id) {
     if (!mgt) return;
     if (uid != client.id) return;
     if (my.game.ilock) return client.publish('turnError', {code: 420}, true); // 아이템 연속사용
-    if (my.game.used[uid] >= 5 || firstMove) return client.publish('turnError', {code: 420}, true); // 사용횟수 초과 or 아이템 횟수초과
-    if (my.game.item[uid][id] >= 2) return client.publish('turnError', {code: 429}, true); // 중복사용 초과
+    if (firstMove) return client.publish('turnError', {code: 421}, true); // 첫 턴
+    if (my.game.used[uid] >= 5 || my.game.item[uid][id] >= 2) return client.publish('turnError', {code: 429}, true); // 횟수 초과
 
     switch (id) {
         case 0: // 넘기기 - 다음 사람으로 턴으로 넘김
