@@ -23,7 +23,7 @@ import { Tail, all as LizardAll } from '../sub/lizard.js';
 import * as IOLog from '../sub/KKuTuIOLog.js';
 import { init as ACInit, canRandomized,
     randomizePacket } from '../sub/utils/AntiCheat.js';
-import { resetDaily, rewardRating, ratingInfo } from '../sub/utils/UserRating.js';
+import { resetDaily, rewardRating, getRatingLevel } from '../sub/utils/UserRating.js';
 import GLOBAL from "../sub/global.json" assert { type: "json" };
 import kkutuLevel from "../sub/KKuTuLevel.js";
 // 망할 셧다운제 import * as Ajae from "../sub/ajae.js";
@@ -152,7 +152,7 @@ export function Robot (target, place, level) {
             target: target,
             equip: my.equip,
             level: my.level,
-            rating: ratingInfo.defaultRobotRating,
+            rating: -1,
             ready: true
         };
     };
@@ -428,7 +428,7 @@ export function Client (socket, profile, sid) {
             o.money = my.money;
             o.equip = my.equip;
             o.exordial = my.exordial;
-            o.rating = my.getFlag("rating") || 90;
+            o.rating = getRatingLevel($c) || 2;
         }
         return o;
     };
