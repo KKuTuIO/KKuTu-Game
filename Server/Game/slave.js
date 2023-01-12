@@ -290,6 +290,10 @@ KKuTu.onClientMessage(function ($c, msg) {
                     msg.code = 433;
                     stable = false;
                 }
+                if ((msg.opts.noguest || msg.opts.onlybeginner || msg.opts.etiquette) && $c.guest) {
+                    msg.code = 434;
+                    stable = false;
+                }
                 // if (ENABLE_ROUND_TIME.indexOf(msg.time) == -1) stable = false;
                 if (msg.time < 10 || msg.time > 150) {
                     stable = false;

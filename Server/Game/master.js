@@ -902,12 +902,13 @@ function processClientRequest($c, msg) {
                     msg.code = 433;
                     stable = false;
                 }
-                if (msg.opts.noguest && $c.guest) {
+                if ((msg.opts.noguest || msg.opts.onlybeginner || msg.opts.etiquette) && $c.guest) {
                     msg.code = 434;
                     stable = false;
                 }
                 /*
                 TODO: 초보 특수규칙 50레벨 미만 설정 제한
+                TODO: 에티켓 특수규칙 평점 매우 낮음 설정 제한
                 if (msg.opts.onlybeginner && ) {
                     msg.code = 434;
                     stable = false;
