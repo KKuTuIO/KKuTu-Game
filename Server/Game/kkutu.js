@@ -428,7 +428,7 @@ export function Client (socket, profile, sid) {
             o.money = my.money;
             o.equip = my.equip;
             o.exordial = my.exordial;
-            o.rating = getRatingLevel($c) || 2;
+            o.rating = getRatingLevel(my) || 2;
         }
         return o;
     };
