@@ -120,7 +120,7 @@ export const RULE = {
     'EKT': {// 영어 끄투
         lang: "en",
         rule: "Classic",
-        opts: ["man", "saf", "ext", "mis", "beg", "nog", "rms", "tct", "rnk", "itm"],
+        opts: ["man", "saf", "ext", "mis", "beg", "nog", "rms", "tct", "rnk", "itm", "etq"],
         time: 1,
         ai: true,
         big: false,
@@ -129,7 +129,7 @@ export const RULE = {
     'ESH': {// 영어 끝말잇기
         lang: "en",
         rule: "Classic",
-        opts: ["ext", "mis", "beg", "nog", "rms", "rnk", "itm"],
+        opts: ["ext", "mis", "beg", "nog", "rms", "rnk", "itm", "etq"],
         time: 1,
         ai: true,
         big: false,
@@ -138,7 +138,7 @@ export const RULE = {
     'KKT': {// 한국어 쿵쿵따
         lang: "ko",
         rule: "Classic",
-        opts: ["man", "saf", "gnt", "ext", "mis", "loa", "str", "k32", "beg", "nog", "rms", "tct", "rnk", "pwr", "itm"],
+        opts: ["man", "saf", "gnt", "ext", "mis", "loa", "str", "k32", "beg", "nog", "rms", "tct", "rnk", "pwr", "itm", "etq"],
         time: 1,
         ai: true,
         big: false,
@@ -147,7 +147,7 @@ export const RULE = {
     'KSH': {// 한국어 끝말잇기
         lang: "ko",
         rule: "Classic",
-        opts: ["man", "saf", "gnt", "ext", "mis", "loa", "str", "beg", "nog", "rms", "tct", "rnk", "itm"],
+        opts: ["man", "saf", "gnt", "ext", "mis", "loa", "str", "beg", "nog", "rms", "tct", "rnk", "itm", "etq"],
         time: 1,
         ai: true,
         big: false,
@@ -156,7 +156,7 @@ export const RULE = {
     'CSQ': {// 자음 퀴즈
         lang: "ko",
         rule: "Jaqwi",
-        opts: ["ijp", "beg", "nog", "nol", "no2", "rnk", "asy"],
+        opts: ["ijp", "beg", "nog", "nol", "no2", "rnk", "asy", "etq"],
         time: 1,
         ai: true,
         big: false,
@@ -165,7 +165,7 @@ export const RULE = {
     'KCW': {// 한국어 십자말풀이
         lang: "ko",
         rule: "Crossword",
-        opts: ["beg", "nog", "rnk", "asy"],
+        opts: ["beg", "nog", "rnk", "asy", "etq"],
         time: 2,
         ai: false,
         big: true,
@@ -174,7 +174,7 @@ export const RULE = {
     'KTY': {// 한국어 타자 대결
         lang: "ko",
         rule: "Typing",
-        opts: ["prv", "beg", "nog", "rnk"],
+        opts: ["prv", "beg", "nog", "rnk", "etq"],
         time: 1,
         ai: false,
         big: false,
@@ -183,7 +183,7 @@ export const RULE = {
     'ETY': {// 영어 타자 대결
         lang: "en",
         rule: "Typing",
-        opts: ["prv", "beg", "nog", "rnk"],
+        opts: ["prv", "beg", "nog", "rnk", "etq"],
         time: 1,
         ai: false,
         big: false,
@@ -202,7 +202,7 @@ export const RULE = {
     'HUN': {// 훈민정음
         lang: "ko",
         rule: "Hunmin",
-        opts: ["ext", "mis", "loa", "str", "beg", "nog", "rms", "rnk"],
+        opts: ["ext", "mis", "loa", "str", "beg", "nog", "rms", "rnk", "etq"],
         time: 1,
         ai: true,
         big: false,
@@ -211,7 +211,7 @@ export const RULE = {
     'KDA': {// 한국어 단어 대결
         lang: "ko",
         rule: "Daneo",
-        opts: ["ijp", "mis", "beg", "nog", "rms", "tct", "rnk"],
+        opts: ["ijp", "mis", "beg", "nog", "rms", "tct", "rnk", "etq"],
         time: 1,
         ai: true,
         big: false,
@@ -220,7 +220,7 @@ export const RULE = {
     'EDA': {// 영어 단어 대결
         lang: "en",
         rule: "Daneo",
-        opts: ["ijp", "mis", "beg", "nog", "rms", "rnk"],
+        opts: ["ijp", "mis", "beg", "nog", "rms", "rnk", "etq"],
         time: 1,
         ai: true,
         big: false,
@@ -229,7 +229,7 @@ export const RULE = {
     'KSS': {// 한국어 솎솎
         lang: "ko",
         rule: "Sock",
-        opts: ["no2", "beg", "nog", "rnk"],
+        opts: ["no2", "beg", "nog", "rnk", "etq"],
         time: 1,
         ai: false,
         big: true,
@@ -238,7 +238,7 @@ export const RULE = {
     'ESS': {// 영어 솎솎
         lang: "en",
         rule: "Sock",
-        opts: ["no2", "beg", "nog", "rnk"],
+        opts: ["no2", "beg", "nog", "rnk", "etq"],
         time: 1,
         ai: false,
         big: true,
@@ -257,7 +257,7 @@ export const RULE = {
     'KWS': {// 한국어 워드스택
         lang: "ko",
         rule: "Wordstack",
-        opts: ["man", "etq", "ext", "mis", "apm", "beg", "nog", "rms", "rnk"],
+        opts: ["man", "ext", "mis", "apm", "beg", "nog", "rms", "rnk", "etq"],
         time: 1,
         ai: true,
         big: false,
@@ -267,7 +267,7 @@ export const RULE = {
     'EWS': {// 영어 워드스택
         lang: "en",
         rule: "Wordstack",
-        opts: ["ext", "mis", "apm", "beg", "nog", "rms", "rnk"],
+        opts: ["ext", "mis", "apm", "beg", "nog", "rms", "rnk", "etq"],
         time: 1,
         ai: true,
         big: false,
