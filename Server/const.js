@@ -299,13 +299,13 @@ export const KO_INJEONG = [
     "IMS", "VOC", "KRR", "KTV",
     "KOT", "DOT", "THP", "DRR",
     "DGM", "RAG", "LVL", "LOL",
-    "TQS", "MMM", "MAP", "MOB",
-    "CYP", "STA", "OIJ", "KGR",
-    "ELW", "OVW", "NEX", /*"WOW",*/
-    "KPO", "JLN", "JAN", "ZEL",
-    "POK", "HSS", "MOV", "HDC",
-    "HOS", "BDM", "KIO", "CON",
-    "HRT", "BRD", "SFX", "NFM"
+    "MMM", "MAP", "MOB", "CYP",
+    "STA", "OIJ", "KGR", "ELW",
+    "OVW", "NEX", "KPO", "JLN",
+    "JAN", "ZEL", "POK", "HSS",
+    "MOV", "HDC", "HOS", "BDM",
+    "KIO", "CON", "HRT", "BRD",
+    "SFX", "NFM"
 ];
 export const EN_INJEONG = [
     "LOL", "BRD"
