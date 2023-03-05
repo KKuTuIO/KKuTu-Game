@@ -268,7 +268,7 @@ export class Data {
 export class WebServer {
     constructor (socket) {
         this.socket = socket;
-        socket.on('message', this.onWebServerMessage);
+        socket.on('message', (msg) => this.onWebServerMessage(msg));
     }
 
     send (type, data) {
