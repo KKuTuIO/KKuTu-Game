@@ -1097,10 +1097,10 @@ export class Client {
             box: this.box,
             equip: this.equip
         });
-        this.send('alert', {
+        /* this.send('alert', {
             value: "시스템 업데이트로 인해 착용 중이던 아이템이 모두 장착 해제되었습니다.<br>아이템 개수 또는 항목에 문제가 있다면 <a href='https://support.kkutu.io' target='_blank'><u>끄투리오 고객센터</u></a>를 통해 문의해주세요.",
             isOverlayEnabled: true
-        });
+        }); */
         this.flush(true, true, false, true);
     };
 
