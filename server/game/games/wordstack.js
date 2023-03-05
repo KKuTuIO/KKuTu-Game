@@ -31,9 +31,6 @@ export function getTitle (){
     let R = new Tail();
     let my = this;
     let l = my.rule;
-    my.game.chain = {};
-    my.game.pool = {};
-    my.game.dic = {};
 
     if(!l){
         R.go("undefinedd");
@@ -67,6 +64,10 @@ export function roundReady (){
     my.game.round++;
     my.game.roundTime = my.time * 1000;
     if (my.game.round <= my.round) {
+        my.game.chain = {};
+        my.game.pool = {};
+        my.game.dic = {};
+
         if (my.opts.mission) my.game.mission = getMission(my.rule.lang, my.opts.tactical);
         for (let k in my.game.seq) {
             let o = my.game.seq[k]

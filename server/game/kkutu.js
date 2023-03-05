@@ -758,6 +758,7 @@ export class Client {
                             }
 
                             let eventStatus = isEventGoing();
+                            let itemFlush = false;
                             if (eventStatus) {
                                 if (eventStatus == 1) { // 이벤트 진행 중에만 갱신하는 정보
                                     let lastEvent = this.getFlag("lastEvent");
@@ -768,6 +769,7 @@ export class Client {
                                             if (EVENT_POINT.ENABLE_TEAM) this.joinNewTeam();
                                         }
                                         if (EVENT_SUPPORT.IS_ENABLED) {
+                                            itemFlush = true;
                                             for (let item of EVENT_SUPPORT.ITEMS) {
                                                 if (item.expire == -1) {
                                                     this.obtain(item.id, {q: item.value, x: EVENT_EXPIRE_AT, mx: true})
@@ -791,7 +793,7 @@ export class Client {
                                     if (EVENT_POINT.ENABLE_TEAM) this.event.team = this.getFlag("eventTeam");
                                 }
                             }
-                            this.flush(EVENT_SUPPORT.IS_ENABLED, false, false, true);
+                            this.flush(itemFlush, false, false, true);
 
                             if (black) {
                                 R.go({
