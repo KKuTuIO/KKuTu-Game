@@ -5,13 +5,13 @@ server/lib/node_modules
 server/Web/public/js/**
 !server/Web/public/js/jquery.js
 server/sub/global.json
-server/sub/nick.json
-server/config/api.inc.json
-server/config/event.inc.json
-server/config/generic.inc.json
-server/config/network.inc.json
-server/config/rule.inc.json
-server/config/word.inc.json
+server/config/nick.json
+server/config/api.json
+server/config/event.json
+server/config/generic.json
+server/config/network.json
+server/config/rule.json
+server/config/word.json
 
 node_modules/**
 .idea
