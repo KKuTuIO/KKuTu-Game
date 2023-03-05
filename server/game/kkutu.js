@@ -2078,7 +2078,7 @@ export class Room {
                         }
                         let amount = pool[Math.floor(Math.random() * pool.length)] || 0;
                         while (amount--) {
-                            let item = getWeightedRandom(EVENT_ITEMPIECE.PIECE_LIST);
+                            let item = getWeightedRandom(EVENT_ITEMPIECE.PIECE_POOL);
                             o.obtain(item, {q: 1, x: EVENT_EXPIRE_AT, mx: true});
                         }
                     }
