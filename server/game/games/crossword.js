@@ -16,9 +16,8 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { WPE_CHECK } from '../../const.js';
 import { Tail, all as LizardAll } from '../../sub/lizard.js';
-import { DB, DIC/*,
+import { DB, DIC, runAs, WPE_CHECK/*,
     ROBOT_SEEK_DELAY, ROBOT_CATCH_RATE, ROBOT_TYPE_COEF*/ } from './_common.js';
 
 export function getTitle () {
@@ -113,7 +112,7 @@ export function roundReady () {
         my.byMaster('roundReady', {
             seq: my.game.seq
         }, true);
-        setTimeout(my.turnStart, 2400);
+        setTimeout(runAs, 2400, my, my.turnStart);
     } else {
         my.roundEnd();
     }
@@ -123,7 +122,7 @@ export function turnStart () {
 
     my.game.late = false;
     my.game.roundAt = (new Date()).getTime();
-    my.game.qTimer = setTimeout(my.turnEnd, my.game.roundTime);
+    my.game.qTimer = setTimeout(runAs, my.game.roundTime, my, my.turnEnd);
     my.byMaster('turnStart', {
         boards: my.game.boards,
         means: my.game.means
@@ -148,7 +147,7 @@ export function turnEnd () {
 
     my.game.late = true;
     my.byMaster('turnEnd', {});
-    my.game._rrt = setTimeout(my.roundReady, 2500);
+    my.game._rrt = setTimeout(runAs, 2500, my, my.roundReady);
 }
 export function submit (client, text, data) {
     let my = this;
@@ -175,7 +174,7 @@ export function submit (client, text, data) {
                     for (j in mbj) {
                         key = [data[0], mbj[j].x, mbj[j].y, mbj[j].dir];
                         if (++mbj[j].count == mbj[j].len) {
-                            if (v = my.game.answers[key.join(',')]) setTimeout(my.submit, 1, client, v, key);
+                            if (v = my.game.answers[key.join(',')]) setTimeout(runAs, 1, my, my.submit, client, v, key);
                         }
                     }
                 }
@@ -229,7 +228,7 @@ export function getScore (text, delay) {
 			key = `${robot._board},${data[0]},${data[1]},${data[2]}`;
 			if(obj = my.game.answers[key]){
 				delay += obj.length * ROBOT_TYPE_COEF[level];
-				robot._timerCatch = setTimeout(my.turnRobot, delay, robot, obj, key.split(','));
+				robot._timerCatch = setTimeout(runAs, delay, my, my.turnRobot, robot, obj, key.split(','));
 				break;
 			}
 		}
@@ -237,7 +236,7 @@ export function getScore (text, delay) {
 	}else if(Math.random() < 0.05){
 		changeBoard();
 	}
-	robot._timerSeek = setTimeout(my.readyRobot, delay, robot);
+	robot._timerSeek = setTimeout(runAs, delay, my, my.readyRobot, robot);
 	function changeBoard(){
 		robot._board = Math.floor(Math.random() * my.game.boards.length);
 	}

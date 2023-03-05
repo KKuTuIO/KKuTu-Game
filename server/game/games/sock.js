@@ -16,9 +16,8 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { KOR_GROUP, WPE_CHECK } from '../../const.js';
 import { Tail } from '../../sub/lizard.js';
-import { DB, DIC } from './_common.js';
+import { DB, DIC, runAs, KOR_GROUP, WPE_CHECK } from './_common.js';
 
 const LANG_STATS = {
     'ko': {
@@ -71,7 +70,7 @@ export function roundReady () {
                 round: my.game.round,
                 board: my.game.board
             }, true);
-            my.game.turnTimer = setTimeout(my.turnStart, 2400);
+            my.game.turnTimer = setTimeout(runAs, 2400, my, my.turnStart);
         });
     } else {
         my.roundEnd();
@@ -82,7 +81,7 @@ export function turnStart () {
 
     my.game.late = false;
     my.game.roundAt = (new Date()).getTime();
-    my.game.qTimer = setTimeout(my.turnEnd, my.game.roundTime);
+    my.game.qTimer = setTimeout(runAs, my.game.roundTime, my, my.turnEnd);
     my.byMaster('turnStart', {
         roundTime: my.game.roundTime
     }, true);
@@ -93,7 +92,7 @@ export function turnEnd () {
     my.game.late = true;
 
     my.byMaster('turnEnd', {});
-    my.game._rrt = setTimeout(my.roundReady, 3000);
+    my.game._rrt = setTimeout(runAs, 3000, my, my.roundReady);
 }
 export function submit (client, text, data) {
     let my = this;

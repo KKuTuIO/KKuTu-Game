@@ -56,7 +56,7 @@ const logger = winston.createLogger({
             datePattern: 'YYYY-MM-DD HH',
             zippedArchive: true,
             maxSize: '20m',
-            maxFiles: '100d',
+            maxFiles: '120d',
             tailable: true,
             format: combine(
                 timestamp({format: 'YYYY-MM-DD HH:mm:ss'}),
@@ -71,7 +71,7 @@ const logger = winston.createLogger({
             datePattern: 'YYYY-MM-DD HH',
             zippedArchive: true,
             maxSize: '20m',
-            maxFiles: '100d',
+            maxFiles: '120d',
             tailable: true,
             format: combine(
                 timestamp({format: 'YYYY-MM-DD HH:mm:ss'}),

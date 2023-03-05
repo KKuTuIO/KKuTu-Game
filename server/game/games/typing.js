@@ -16,10 +16,9 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { WPE_CHECK } from '../../const.js';
 import { Tail } from '../../sub/lizard.js';
 import { PROVERBS } from './typing_const.js';
-import { DB, DIC, traverse } from './_common.js';
+import { DB, DIC, runAs, traverse, WPE_CHECK } from './_common.js';
 
 let LIST_LENGTH = 180;
 let DOUBLE_VOWELS = [9, 10, 11, 14, 15, 16, 19];
@@ -72,7 +71,7 @@ export function roundReady () {
             round: my.game.round,
             list: my.game.clist
         }, true);
-        setTimeout(my.turnStart, 2400);
+        setTimeout(runAs, 2400, my, my.turnStart);
     } else {
         traverse.call(my, function (o) {
             scores[o.id] = Math.round(o.game.spl / my.round);
@@ -89,7 +88,7 @@ export function turnStart () {
         o.game.index = 0;
         o.game.semi = 0;
     });
-    my.game.qTimer = setTimeout(my.turnEnd, my.game.roundTime);
+    my.game.qTimer = setTimeout(runAs, my.game.roundTime, my, my.turnEnd);
     my.byMaster('turnStart', {roundTime: my.game.roundTime}, true);
 }
 export function turnEnd () {
@@ -107,7 +106,7 @@ export function turnEnd () {
         ok: false,
         speed: spl
     });
-    my.game._rrt = setTimeout(my.roundReady, (my.game.round == my.round) ? 3000 : 10000);
+    my.game._rrt = setTimeout(runAs, (my.game.round == my.round) ? 3000 : 10000, my, my.roundReady);
 }
 export function submit (client, text) {
     let my = this;

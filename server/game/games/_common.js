@@ -16,11 +16,32 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import * as Const from '../../const.js';
+import { GAME_TYPE, MISSION, MISSION_TACT, EVENT_WORDPIECE, EXAMPLE_TITLE } from '../../config.js';
+export { GAME_TYPE, MISSION, MISSION_TACT, EVENT_WORDPIECE, EXAMPLE_TITLE };
 import { Tail } from '../../sub/lizard.js';
 import MultiArray from 'multiarr';
 export let DB;
 export let DIC;
+
+// 기존 const.js 값
+export const KOR_STRICT = /(^|,)(1|INJEONG)($|,)/;
+export const KOR_GROUP = new RegExp("(,|^)(" + [
+    "0", "1", "3", "7", "8", "11", "9",
+    "16", "15", "17", "2", "18", "20", "26", "19",
+    "INJEONG"
+].join('|') + ")(,|$)");
+export const ENG_ID = /^[a-z]+$/i;
+export const JPN_ID = new RegExp(); // 일본어 제시어 필터, 추가 필요
+
+export const KOR_FLAG = {
+    LOANWORD: 1,  // 외래어
+    INJEONG: 2,   // 어인정
+    SPACED: 4,    // 띄어쓰기를 해야 하는 어휘
+    SATURI: 8,    // 방언
+    OLD: 16,      // 옛말
+    MUNHWA: 32,   // 문화어
+    KUNG: 64      // 쿵쿵따 전용 단어
+};
 
 export const ROBOT_START_DELAY = [ 1200, 800, 500, 300, 150, 10 ];
 export const ROBOT_TYPE_COEF = [ 1150, 750, 500, 300, 150, 5 ]; // 자음퀴즈는 두배로 사용
@@ -57,6 +78,11 @@ export function init (_DB, _DIC) {
     DIC = _DIC;
 }
 
+export function runAs(obj, func, ...args) {
+    const target = func.bind(obj);
+    return target.apply(obj, args);
+}
+
 export function shuffle (arr) {
     let r = [...arr];
     r.sort(function (a, b) { return Math.random() - 0.5; });
@@ -83,7 +109,7 @@ export function getTheme () {
 export function getChar (text) {
     let my = this;
     
-    switch (Const.GAME_TYPE[my.mode]) {
+    switch (GAME_TYPE[my.mode]) {
         case 'EKT':
             return text.slice(text.length - 3);
         case 'KAP':
@@ -104,7 +130,7 @@ export function getSubChar(char) {
     let k;
     let ca, cb, cc;
 
-    switch (Const.GAME_TYPE[my.mode]) {
+    switch (GAME_TYPE[my.mode]) {
         case "EKT":
             if (char.length > 2) r = char.slice(1);
             break;
@@ -185,7 +211,7 @@ export function getAuto (char, subc, type, chain) {
     }
     if (chain === undefined) chain = my.game.chain;
     let R = new Tail();
-    let gameType = Const.GAME_TYPE[my.mode];
+    let gameType = GAME_TYPE[my.mode];
     let aqs, adc, aft;
     let bool = type == 1;
     
@@ -224,13 +250,13 @@ export function getAuto (char, subc, type, chain) {
         console.log(`Undefined char detected! char=${char} type=${type} subc=${subc}`);
     }
     
-    if (!my.opts.injeong) aqs = aqs.concat([ 'flag', { '$nand': Const.KOR_FLAG.INJEONG } ]);
+    if (!my.opts.injeong) aqs = aqs.concat([ 'flag', { '$nand': KOR_FLAG.INJEONG } ]);
     if (my.rule.lang == "ko") {
-        if (my.opts.loanword) aqs = aqs.concat([ 'flag', { '$nand': Const.KOR_FLAG.LOANWORD } ]);
-        if (my.opts.strict) aqs = aqs.concat([ 'type', Const.KOR_STRICT ], [ 'flag', { $lte: 3 } ]);
-        else aqs = aqs.concat([ 'type', Const.KOR_GROUP ]);
+        if (my.opts.loanword) aqs = aqs.concat([ 'flag', { '$nand': KOR_FLAG.LOANWORD } ]);
+        if (my.opts.strict) aqs = aqs.concat([ 'type', KOR_STRICT ], [ 'flag', { $lte: 3 } ]);
+        else aqs = aqs.concat([ 'type', KOR_GROUP ]);
     } else if (my.rule.lang == "en") {
-        aqs = aqs.concat([ '_id', Const.ENG_ID ]);
+        aqs = aqs.concat([ '_id', ENG_ID ]);
     } else {
         // 한국어, 영어 외 - 현재는 일본어
     }
@@ -262,9 +288,9 @@ export function getAuto (char, subc, type, chain) {
 }
 
 export function getMission(l, t) {
-    let arr = Const.MISSION[l] || [];
-    if (t && Const.MISSION_TACT.hasOwnProperty(l))
-        arr = arr.concat(Const.MISSION_TACT[l]);
+    let arr = MISSION[l] || [];
+    if (t && MISSION_TACT.hasOwnProperty(l))
+        arr = arr.concat(MISSION_TACT[l]);
 
     if (!arr) return "-";
     return getRandom(arr);
@@ -273,7 +299,7 @@ export function getMission(l, t) {
 export function getManner(char, subc) {
     let my = this;
     let MAN = DB.MANNER_CACHE[my.rule.lang];
-    let mode = Const.GAME_TYPE[my.mode];
+    let mode = GAME_TYPE[my.mode];
     let gameCache = (my.opts.sami && my.game.wordLength == 3) ?
                     my.game.manner_alt : my.game.manner;
 
@@ -291,7 +317,7 @@ export function getManner(char, subc) {
 export function getWordList(char, subc, iij) {
     let my = this;
     let MAN = DB.MANNER_CACHE[my.rule.lang];
-    let mode = Const.GAME_TYPE[my.mode];
+    let mode = GAME_TYPE[my.mode];
     let R = new MultiArray();
 
     if (mode == "EKT" || mode == "KKT") {
@@ -359,7 +385,7 @@ export function getThemeWords (theme) {
 
 export function getRandomChar (text) {
     let my = this;
-    let mode = Const.GAME_TYPE[my.mode];
+    let mode = GAME_TYPE[my.mode];
     let isSpc = (mode == "EKT" || mode == "KKT")
     let chars = [];
     if (!text) {
@@ -399,4 +425,25 @@ export function getPreScore (text, chainArr, tr) {
 }
 export function getPenalty (chain, score) {
     return -1 * Math.round(Math.min(10 + (chain || []).length * 2.1 + score * 0.15, score));
+}
+
+// 이벤트 글자 조각 드랍 제한 확인 함수
+export function WPE_CHECK (lang, theme) {
+    let THEMERULE = [];
+    if (!EVENT_WORDPIECE.LANG_ENABLED_FOR[lang]) return false;
+    
+    if (EVENT_WORDPIECE.IS_THEME_LIMITED[lang]) {
+        if (!theme || theme.length == 0) return false;
+        let THEMERULE = EVENT_WORDPIECE.DROP_THEMES[lang];
+        let drop = false;
+        theme = theme.split(',');
+        for (let t of theme) {
+            if (THEMERULE.indexOf(t) != -1) {
+                drop = true;
+                break;
+            }
+        }
+        return drop;
+    }
+    return true;
 }

@@ -1,8 +1,12 @@
 import * as IOLog from './KKuTuIOLog.js';
 import * as DB from './db.js';
-import * as KKuTu from "../Game/kkutu.js";
+import * as KKuTu from "../game/kkutu.js";
 
-import nickConf from './nick.json' assert { type: "json" };
+import { readFileSync } from 'fs';
+import { dirname } from 'path';
+import { fileURLToPath } from 'url';
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const nickConf = JSON.parse(readFileSync(`${__dirname}/nick.json`, 'utf8'));
 
 const pattern = RegExp(nickConf.pattern['pattern'], nickConf.pattern['flags']['pattern']);
 const bad = RegExp(nickConf.pattern['bad'], nickConf.pattern['flags']['bad']);

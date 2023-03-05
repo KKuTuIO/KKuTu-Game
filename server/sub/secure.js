@@ -16,29 +16,23 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import * as IOLog from "../sub/KKuTuIOLog.js";
-import * as DB from "../sub/db.js";
-let len = Number(process.argv[2] || 10);
+import { WS_SSL_OPTIONS } from '../config.js';
+import { readFileSync } from 'fs';
 
-DB.onReady(function () {
-    let rank = 0;
-    let phit = 0;
+export default function () {
+    const SSL_OPTIONS = WS_SSL_OPTIONS
+    const options = {};
 
-    DB.kkutu['ko'].find(['hit', {$gt: 0}]).sort(['hit', -1]).limit(len).on(function ($res) {
-        let i, $o, c;
-        let res = [];
-
-        for (i in $res) {
-            $o = $res[i];
-            if (phit == $o.hit) {
-                c = rank;
-            } else {
-                c = rank = Number(i) + 1;
-                phit = $o.hit;
-            }
-            res.push(c + "위. " + $o._id + " (" + $o.hit + ")");
+    if (SSL_OPTIONS.isPFX === true) {
+        options.pfx = readFileSync(SSL_OPTIONS.PFX);
+        options.passphrase = SSL_OPTIONS.PFXPass;
+    } else {
+        options.key = readFileSync(SSL_OPTIONS.PRIVKEY);
+        options.cert = readFileSync(SSL_OPTIONS.CERT);
+        if (SSL_OPTIONS.isCA === true) {
+            options.ca = readFileSync(SSL_OPTIONS.CA);
         }
-        IOLog.emerg(res.join('\n'));
-        process.exit();
-    });
-});
+    }
+
+    return options;
+}

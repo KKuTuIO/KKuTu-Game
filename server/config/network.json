@@ -1,0 +1,22 @@
+{
+  "PG_USER": "postgres",
+  "PG_PASS": "Your PostgreSQL Password Here",
+  "PG_PORT": 5432,
+  "PG_DB": "main",
+  "MAIN_PORTS": [
+    8080
+  ],
+  "TEST_PORT": 4040,
+  "WEB_KEY": "Your Web Key Here",
+  "CRYPTO_KEY": "Your Crypto Key Here",
+  "IS_WS_SECURED": false,
+  "WS_SSL_OPTIONS": {
+    "PRIVKEY": "Your SSL Private Key Here",
+    "CERT": "Your SSL Certificate Here",
+    "CA": "Your SSL CA-Bundle Here",
+    "PFX": "Your PFX Bundle Here",
+    "PFXPass": "Your PFX Passphrase here",
+    "isPFX": false,
+    "isCA": false
+  }
+}

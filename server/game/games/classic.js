@@ -16,13 +16,13 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import * as Const from '../../const.js';
 import { Tail, all as LizardAll } from '../../sub/lizard.js';
 import * as IOLog from '../../sub/KKuTuIOLog.js';
-import { DB, DIC, shuffle, getMission, getChar, getSubChar, getPenalty,
+import { DB, DIC, runAs, shuffle, getMission, getChar, getSubChar, getPenalty,
     getRandom, getManner, getWordList, getPreScore, getRandomChar,
     ROBOT_START_DELAY, ROBOT_HIT_LIMIT, ROBOT_LENGTH_LIMIT,
-    ROBOT_THINK_COEF, ROBOT_TYPE_COEF } from './_common.js';
+    ROBOT_THINK_COEF, ROBOT_TYPE_COEF, EXAMPLE_TITLE, GAME_TYPE,
+    KOR_GROUP, ENG_ID, JPN_ID, WPE_CHECK, KOR_FLAG } from './_common.js';
 
 let WISH_WORD_CACHE = {'ko': {}, 'en': {}};
 
@@ -41,10 +41,10 @@ export function getTitle () {
         R.go("undefinedd");
         return R;
     }
-    EXAMPLE = Const.EXAMPLE_TITLE[l.lang];
+    EXAMPLE = EXAMPLE_TITLE[l.lang];
     my.game.dic = {};
 
-    switch (Const.GAME_TYPE[my.mode]) {
+    switch (GAME_TYPE[my.mode]) {
         case 'EKT':
         case 'ESH':
         case 'EAP':
@@ -71,13 +71,13 @@ export function getTitle () {
         let titleFilter;
         switch (l.lang) {
             case 'ko':
-                titleFilter = ['type', Const.KOR_GROUP];
+                titleFilter = ['type', KOR_GROUP];
                 break;
             case 'en':
-                titleFilter = ['_id', Const.ENG_ID];
+                titleFilter = ['_id', ENG_ID];
                 break;
             case 'ja':
-                titleFilter = ['_id', Const.JPN_ID];
+                titleFilter = ['_id', JPN_ID];
                 break;
         }
         DB.kkutu[l.lang].find(
@@ -129,7 +129,6 @@ export function getTitle () {
     }
 
     tryTitle(10);
-    
     return R;
 }
 export function roundReady () {
@@ -170,7 +169,7 @@ export function roundReady () {
             subChar: my.game.subChar,
             mission: my.game.mission
         }, true);
-        my.game.turnTimer = setTimeout(my.turnStart, 2400);
+        my.game.turnTimer = setTimeout(runAs, 2400, my, my.turnStart);
     } else {
         my.roundEnd();
     }
@@ -204,7 +203,7 @@ export function turnStart (force) {
         wordLength: my.game.wordLength,
         seq: force ? my.game.seq : undefined
     }, true);
-    my.game.turnTimer = setTimeout(my.turnEnd, Math.min(my.game.roundTime, my.game.turnTime + 100));
+    my.game.turnTimer = setTimeout(runAs, Math.min(my.game.roundTime, my.game.turnTime + 100), my, my.turnEnd);
     if (si = my.game.seq[my.game.turn]) if (si.robot) {
         my.readyRobot(si);
     }
@@ -218,7 +217,7 @@ export function turnEnd () {
     target = DIC[my.game.seq[my.game.turn]] || my.game.seq[my.game.turn];
 
     if (my.game.loading) {
-        my.game.turnTimer = setTimeout(my.turnEnd, 100);
+        my.game.turnTimer = setTimeout(runAs, 100, my, my.turnEnd);
         return;
     }
     my.game.late = true;
@@ -238,7 +237,7 @@ export function turnEnd () {
         score: score,
         hint: getRandom(WL)
     }, true);
-    my.game._rrt = setTimeout(my.roundReady, 3000);
+    my.game._rrt = setTimeout(runAs, 3000, my, my.roundReady);
     clearTimeout(my.game.robotTimer);
 }
 export function submit (client, text) {
@@ -269,7 +268,7 @@ export function submit (client, text) {
         if (!preChar) return;
         let preSubChar = getSubChar.call(my, preChar);
         let firstMove = my.game.chain.length < 1;
-        let mode = Const.GAME_TYPE[my.mode];
+        let mode = GAME_TYPE[my.mode];
 
         function preApproved() {
             function approved() {
@@ -301,10 +300,10 @@ export function submit (client, text) {
                 if (my.game.mission === true) {
                     my.game.mission = getMission(my.rule.lang, my.opts.tactical);
                 }
-                setTimeout(my.turnNext, my.game.turnTime / 6);
+                setTimeout(runAs, my.game.turnTime / 6, my, my.turnNext);
                 if (!client.robot) {
                     client.invokeWordPiece(text, 1);
-                    if (client.game.wpe !== undefined && $doc && Const.WPE_CHECK(my.rule.lang, $doc.theme))
+                    if (client.game.wpe !== undefined && $doc && WPE_CHECK(my.rule.lang, $doc.theme))
                         client.invokeEventPiece(text, 1);
                     DB.kkutu[l].update(['_id', text]).set(['hit', $doc.hit + 1]).on();
                 }
@@ -358,10 +357,10 @@ export function submit (client, text) {
 
         if ($doc) {
             let theme = $doc.theme.split(',');
-            if (!my.opts.injeong && ($doc.flag & Const.KOR_FLAG.INJEONG)) denied();
-            else if (mode != "KKT" && ($doc.flag & Const.KOR_FLAG.KUNG)) denied();
-            else if (my.opts.strict && (!$doc.type.match(Const.KOR_STRICT) || $doc.flag >= 4)) denied(406);
-            else if (my.opts.loanword && ($doc.flag & Const.KOR_FLAG.LOANWORD)) denied(405);
+            if (!my.opts.injeong && ($doc.flag & KOR_FLAG.INJEONG)) denied();
+            else if (mode != "KKT" && ($doc.flag & KOR_FLAG.KUNG)) denied();
+            else if (my.opts.strict && (!$doc.type.match(KOR_STRICT) || $doc.flag >= 4)) denied(406);
+            else if (my.opts.loanword && ($doc.flag & KOR_FLAG.LOANWORD)) denied(405);
             else if (my.opts.safe && theme && theme.includes("SBW")) denied(411);
             else preApproved();
         } else {
@@ -370,7 +369,7 @@ export function submit (client, text) {
     }
 
     function isChainable() {
-        let type = Const.GAME_TYPE[my.mode];
+        let type = GAME_TYPE[my.mode];
         let char = my.game.char, subChar = my.game.subChar;
         let l = char.length;
 
@@ -431,7 +430,7 @@ export function useItem (client, id) {
         case 3: // 제시어 변경 - 랜덤 제시어로 변경 (단, 쿵쿵따는 가운데 글자로 바꿈)
             isTurnEnd = true;
             let newChar;
-            if (Const.GAME_TYPE[my.mode] == 'KKT') {
+            if (GAME_TYPE[my.mode] == 'KKT') {
                 // 쿵쿵따 전용처리
                 let chainlen = my.game.chain.length;
                 if (!chainlen) {
@@ -475,7 +474,7 @@ export function useItem (client, id) {
     // 아이템 사용으로 턴이 종료됨 or 턴을 다시 시작해야함
     if (isTurnEnd) {
         my.game.late = true;
-        setTimeout(my.turnNext, my.game.turnTime / 6);
+        setTimeout(runAs, my.game.turnTime / 6, my, my.turnNext);
     }
 }
 
@@ -501,7 +500,7 @@ export function readyRobot (robot) {
     let ended = {};
     let word, text, i, c;
     let lmax;
-    let mode = Const.GAME_TYPE[my.mode];
+    let mode = GAME_TYPE[my.mode];
     let isRev = mode == "KAP" || mode == "EAP" || mode == "JAP";
     let list = getWordList.call(my, my.game.char, my.game.subChar, true)
     if (list && list.length) {
@@ -567,8 +566,8 @@ export function readyRobot (robot) {
                             continue;
                     }
                     target = word;
-                    // 1/30으로 더 긴 단어를 찾지 않고 그대로 입력
-                    if (Math.random() * 30 < 1) break;
+                    // 1/16으로 더 긴 단어를 찾지 않고 그대로 입력
+                    if (Math.random() * 16 < 1) break;
                 }
             }
         }
@@ -582,7 +581,7 @@ export function readyRobot (robot) {
     function after() {
         delay += text.length * ROBOT_TYPE_COEF[level];
         // robot._done.push(text);
-        setTimeout(my.turnRobot, delay, robot, text);
+        setTimeout(runAs, delay, my, my.turnRobot, robot, text);
     }
 
     function getWishList(list) {

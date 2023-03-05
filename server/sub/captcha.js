@@ -1,11 +1,11 @@
 import fetch, { FormData } from 'node-fetch'
-import GLOBAL from "./global.json" assert { type: "json" };
+import { CAPTCHA_SECRET_KEY } from "../config.js"
 
 export function verifyCaptcha (responseToken, remoteIp, callback) {
-    /* const verifyUrl = `https://www.google.com/recaptcha/api/siteverify?secret=${GLOBAL.CAPTCHA_SECRET_KEY}&response=${responseToken}&remoteip=${remoteIp}`; */
+    /* const verifyUrl = `https://www.google.com/recaptcha/api/siteverify?secret=${CAPTCHA_SECRET_KEY}&response=${responseToken}&remoteip=${remoteIp}`; */
     const verifyUrl = `https://challenges.cloudflare.com/turnstile/v0/siteverify`;
     const formData = new FormData();
-    formData.set('secret', GLOBAL.CAPTCHA_SECRET_KEY);
+    formData.set('secret', CAPTCHA_SECRET_KEY);
     formData.set('response', responseToken);
     formData.set('remoteip', remoteIp);
 

@@ -18,7 +18,7 @@
 
 import * as Prompt from 'prompt';
 import * as DB from '../../sub/db.js';
-import { KOR_GROUP } from '../../const.js';
+import { KOR_GROUP } from './_common.js';
 import { Tail } from '../../sub/lizard.js';
 import * as IOLog from "../../sub/KKuTuIOLog.js";
 const LANG = 'ko';

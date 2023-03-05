@@ -18,7 +18,7 @@
 
 const WSServer = (await import('ws')).default.Server;
 // import * as File from 'fs';
-import { IS_WS_SECURED, TEST_PORT, TESTER, GAME_TYPE } from "../const.js";
+import { reloads, IS_WS_SECURED, TEST_PORT, CRYPTO_KEY, ADMIN, TESTER, GAME_TYPE } from "../config.js";
 import { createServer } from 'https';
 import Secure from '../sub/secure.js';
 let Server;
@@ -42,7 +42,6 @@ import { decrypt } from "../sub/crypto.js";
 // import * as Lizard from '../sub/lizard.js';
 import * as MainDB from '../sub/db.js';
 import * as IOLog from '../sub/KKuTuIOLog.js';
-import GLOBAL from '../sub/global.json' assert { type: "json" };
 import { checkMessagneIntegrity } from '../sub/utils/AntiCheat.js';
 import { modifyUserRating, ratingInfo } from '../sub/utils/UserRating.js';
 
@@ -108,6 +107,15 @@ process.on('message', function (msg) {
             if ($c.gaming) break;
             $c.refresh();
             break;
+        case "reload":
+            if (msg.target.indexOf("all") != -1) {
+                for (let reload of reloads) reload();
+                break;
+            }
+            for (let k of msg.target) {
+                if (reloads[k]) reloads[k]();
+            }
+            break;
         default:
             IOLog.warn(`Unhandled IPC message type: ${msg.type}`);
     }
@@ -123,7 +131,7 @@ Server.on('connection', function (socket, req) {
     let key;
     // 토큰 복호화
     try {
-        key = decrypt(chunk[0], GLOBAL.CRYPTO_KEY);
+        key = decrypt(chunk[0], CRYPTO_KEY);
     } catch (exception) {
         key = ".";
     }
@@ -159,7 +167,7 @@ Server.on('connection', function (socket, req) {
     }
     MainDB.session.findOne(['_id', key]).limit(['profile', true]).on(function ($body) {
         $c = new KKuTu.Client(socket, $body ? $body.profile : null, key);
-        $c.admin = GLOBAL.ADMIN.indexOf($c.id) != -1;
+        $c.admin = ADMIN.indexOf($c.id) != -1;
 
         if (DIC[$c.id]) {
             DIC[$c.id].send('error', {code: 408});

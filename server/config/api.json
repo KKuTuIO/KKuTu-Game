@@ -1,0 +1,14 @@
+{
+  "CAPTCHA_TO_GUEST": false,
+  "CAPTCHA_TO_USER": false,
+  "CAPTCHA_SITE_KEY": "Your Captcha site key Here",
+  "CAPTCHA_SECRET_KEY": "Your Captcha secret key Here",
+  
+  "DISCORD_WEBHOOK": {
+    "REPORT": "Your WebHook URI Here",
+    "SUSPICION_LOW": "Your WebHook URI Here",
+    "SUSPICION_MID": "Your WebHook URI Here",
+    "SUSPICION_HIGH": "Your WebHook URI Here",
+    "SUSPICION_EMER": "Your WebHook URI Here"
+  }
+}

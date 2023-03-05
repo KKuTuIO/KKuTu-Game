@@ -1,0 +1,24 @@
+{
+  "ADMIN": [
+    "Input admin id here"
+  ],
+  "TESTER": [
+    "Input tester id here",
+    "ID on ADMIN will always included as tester"
+  ],
+  "KKUTU_MAX": 400,
+  "MAX_OBSERVER": 4,
+
+  "EQUIP_GROUP": {
+    "Mhead": ["Mhead"],
+    "Meye": ["Meye"],
+    "Mmouth": ["Mmouth"],
+    "Mlhand": ["Mhand"],
+    "Mrhand": ["Mhand"],
+    "Mclothes": ["Mclothes"],
+    "Mshoes": ["Mshoes"],
+    "Mback": ["Mback"],
+    "BDG": ["BDG1", "BDG2", "BDG3", "BDG4"],
+    "NIK": ["NIK"]
+  }
+}

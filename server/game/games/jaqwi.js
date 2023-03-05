@@ -16,12 +16,12 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import * as Const from '../../const.js';
 import { Tail } from '../../sub/lizard.js';
-import { DB, DIC, getTheme, getThemeWords, getRandom,
-    ROBOT_CATCH_RATE, ROBOT_TYPE_COEF } from './_common.js';
+import { DB, DIC, runAs, getTheme, getThemeWords, getRandom,
+    ROBOT_CATCH_RATE, ROBOT_TYPE_COEF, KOR_GROUP, WPE_CHECK } from './_common.js';
 
 let robotTimers = {};
+const INIT_SOUNDS = ["ㄱ", "ㄲ", "ㄴ", "ㄷ", "ㄸ", "ㄹ", "ㅁ", "ㅂ", "ㅃ", "ㅅ", "ㅆ", "ㅇ", "ㅈ", "ㅉ", "ㅊ", "ㅋ", "ㅌ", "ㅍ", "ㅎ"];
 
 export function getTitle () {
     let R = new Tail();
@@ -49,9 +49,10 @@ export function roundReady () {
         my.game.theme = getTheme.call(my);
         let words = getThemeWords.call(my, my.game.theme);
         let $ans;
+        let minlen = my.opts.no2 ? 3 : 2;
         do {
             $ans = getRandom(words);
-        } while (my.game.done.includes($ans._id));
+        } while ($ans._id.length < minlen || my.game.done.includes($ans._id));
         if (!my.game.done) return;
 
         // $ans가 null이면 골치아프다...
@@ -64,7 +65,7 @@ export function roundReady () {
             round: my.game.round,
             theme: my.game.theme
         }, true);
-        setTimeout(my.turnStart, 2400);
+        setTimeout(runAs, 2400, my, my.turnStart);
     } else {
         my.roundEnd();
     }
@@ -79,7 +80,7 @@ export function turnStart () {
     my.game.roundAt = (new Date()).getTime();
     my.game.meaned = 0;
     my.game.primary = 0;
-    my.game.qTimer = setTimeout(my.turnEnd, my.game.roundTime);
+    my.game.qTimer = setTimeout(runAs, my.game.roundTime, my, my.turnEnd);
     my.game.hintTimer = setTimeout(function () {
         turnHint.call(my);
     }, my.game.roundTime * 0.333);
@@ -113,7 +114,7 @@ export function turnEnd () {
             answer: my.game.answer ? my.game.answer._id : ""
         });
     }
-    my.game._rrt = setTimeout(my.roundReady, 2500);
+    my.game._rrt = setTimeout(runAs, 2500, my, my.roundReady);
 }
 export function submit (client, text) {
     let my = this;
@@ -131,12 +132,12 @@ export function submit (client, text) {
         t = now - my.game.roundAt;
         if (my.game.primary == 0) if (my.game.roundTime - t > 10000) { // 가장 먼저 맞힌 시점에서 10초 이내에 맞히면 점수 약간 획득
             clearTimeout(my.game.qTimer);
-            my.game.qTimer = setTimeout(my.turnEnd, 10000);
+            my.game.qTimer = setTimeout(runAs, 10000, my, my.turnEnd);
             for (i in my.game.robots) {
                 if (my.game.roundTime > my.game.robots[i]._delay) {
                     clearTimeout(my.game.robots[i]._timer);
                     if (client != my.game.robots[i]) if (Math.random() < ROBOT_CATCH_RATE[my.game.robots[i].level])
-                        my.game.robots[i]._timer = setTimeout(my.turnRobot, ROBOT_TYPE_COEF[my.game.robots[i].level] * 2, my.game.robots[i], text);
+                        my.game.robots[i]._timer = setTimeout(runAs, ROBOT_TYPE_COEF[my.game.robots[i].level] * 2, my, my.turnRobot, my.game.robots[i], text);
                 }
             }
         }
@@ -153,7 +154,7 @@ export function submit (client, text) {
             bonus: 0
         }, true);
         client.invokeWordPiece(text, 0.9);
-        if (client.game.wpe !== undefined && Const.WPE_CHECK(my.rule.lang, $ans.theme))
+        if (client.game.wpe !== undefined && WPE_CHECK(my.rule.lang, $ans.theme))
             client.invokeEventPiece(text, 0.9);
         while (my.game.meaned < my.game.hint.length) {
             turnHint.call(my);
@@ -195,7 +196,7 @@ export function readyRobot (robot) {
         if (Math.random() < ROBOT_CATCH_RATE[level]) {
             text = my.game.answer._id;
             delay = my.game.roundTime / 3 * i + text.length * ROBOT_TYPE_COEF[level] * 2;
-            robot._timer = setTimeout(my.turnRobot, delay, robot, text);
+            robot._timer = setTimeout(runAs, delay, my, my.turnRobot, robot, text);
             robot._delay = delay;
             break;
         }
@@ -222,7 +223,7 @@ function getConsonants(word, lucky) {
             R += word.charAt(i);
             continue;
         } else c = Math.floor(c / 588);
-        R += Const.INIT_SOUNDS[c];
+        R += INIT_SOUNDS[c];
     }
     return R;
 }
@@ -257,7 +258,7 @@ function getAnswer(theme, nomean) {
     let args = [['_id', {$nin: my.game.done}]];
 
     args.push(['theme', new RegExp("(,|^)(" + theme + ")(,|$)")]);
-    args.push(['type', Const.KOR_GROUP]);
+    args.push(['type', KOR_GROUP]);
     args.push(['flag', {$lte: 7}]);
     DB.kkutu['ko'].find.apply(my, args).on(function ($res) {
         if (!$res) return R.go(null);

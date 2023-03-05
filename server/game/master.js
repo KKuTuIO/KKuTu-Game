@@ -22,13 +22,13 @@ let HTTPS_Server;
 // import { writeSnapshot }from "heapdump";
 import * as KKuTu from './kkutu.js';
 import { decrypt } from "../sub/crypto.js";
-import GLOBAL from "../sub/global.json" assert { type: "json" };
-import { DISCORD_WEBHOOK, GAME_TYPE, IS_WS_SECURED,
-    TEST_PORT, KKUTU_MAX, TESTER } from "../const.js";
+import { reloads, DISCORD_WEBHOOK, GAME_TYPE, IS_WS_SECURED, WEB_KEY, CRYPTO_KEY,
+    ADMIN, CAPTCHA_TO_GUEST, CAPTCHA_SITE_KEY,
+    TEST_PORT, KKUTU_MAX, TESTER, CAPTCHA_TO_USER, EVENT_WORDPIECE, EVENT_POINT, EVENT_ITEMPIECE } from "../config.js";
 import * as IOLog from '../sub/KKuTuIOLog.js';
 import Secure from '../sub/secure.js';
 import { verifyCaptcha } from '../sub/captcha.js';
-import { requestLastRelay, waitACinit, processSuspicion } from '../sub/utils/AntiCheat.js';
+import { requestLastRelay, waitACinit, processSuspicion, rebuildWebHook } from '../sub/utils/AntiCheat.js';
 import { initUserRating } from '../sub/utils/UserRating.js';
 import { processUserNickChange } from "../sub/UserNickChange.js";
 import geoIp from 'geoip-country';
@@ -53,7 +53,7 @@ let allowLobbyChat = true;
 let allowGuestEnter = true;
 let allowEnter = true;
 let allowRoomCreate = true;
-let alwaysTriggerCaptcha = GLOBAL.CAPTCHA_TO_USER;
+let alwaysTriggerCaptcha = CAPTCHA_TO_USER;
 
 export let XPMultiplier = 1;
 export let MoneyMultiplier = 1;
@@ -309,14 +309,43 @@ function processAdmin(id, value) {
             return null;
         case "refreshword":
             DIC[id].send('notice', {value: "단어 캐시를 다시 불러옵니다. 자세한 내용은 로그를 참조하세요."});
+            IOLog.notice(`${id} 님이 단어 캐시를 갱신했습니다.`);
             publishMessage({type:"refresh-word"});
             MainDB.refreshWordcache();
             return null;
         case "refreshshop":
             DIC[id].send('notice', {value: "아이템 정보를 다시 불러옵니다. 자세한 내용은 로그를 참조하세요."});
+            IOLog.notice(`${id} 님이 아이템 정보를 갱신했습니다.`);
             publishMessage({type:"refresh-shop"});
             MainDB.refreshShopcache();
             return null;
+        case "reload":
+            temp = value.trim().split(" ");
+            if (value.trim() == "#reload" || temp.length === 0) {
+                DIC[id].send('notice', {value: `리로드 가능한 설정 파일 목록 : ${Object.keys(reloads).join(", ")}`});
+                DIC[id].send('notice', {value: `all을 입력하면 모든 값을 다시 불러옵니다.`});
+                return null;
+            }
+            if (temp.indexOf("all") != -1) {
+                DIC[id].send('notice', {value: "모든 설정 파일을 다시 불러옵니다."});
+                IOLog.notice(`${id} 님이 모든 설정 파일을 다시 불러왔습니다.`);
+                publishMessage({type:"reload",target:["all"]});
+                for (let reload of reloads) reload();
+                rebuildWebHook();
+                return null;
+            }
+            DIC[id].send('notice', {value: "설정 파일을 다시 불러옵니다."});
+            IOLog.notice(`${id} 님이 일부 설정 파일을 다시 불러왔습니다.`);
+            IOLog.notice(`다시 불러온 설정 : ${temp.join(', ')}`);
+            publishMessage({type:"reload",target:temp});
+            for (let k of temp) {
+                if (reloads[k]) reloads[k]();
+            }
+            if (temp.indexOf("api") != -1) {
+                rebuildWebHook();
+            }
+            return null;
+
     }
     return value;
 }
@@ -506,13 +535,13 @@ export async function init (_SID, _CHAN) {
             let isWebServer = false;
             let key = socket.upgradeReq.url.slice(1);
 
-            if (key.startsWith(GLOBAL.WEB_KEY)) {
+            if (key.startsWith(WEB_KEY)) {
                 isWebServer = true;
-                key = key.replace(`${GLOBAL.WEB_KEY}:`, '')
+                key = key.replace(`${WEB_KEY}:`, '')
             } else {
                 // 토큰 복호화
                 try {
-                    key = decrypt(socket.upgradeReq.url.slice(1), GLOBAL.CRYPTO_KEY);
+                    key = decrypt(socket.upgradeReq.url.slice(1), CRYPTO_KEY);
                 } catch (exception) {
                     key = ".";
                 }
@@ -545,7 +574,7 @@ export async function init (_SID, _CHAN) {
 
             MainDB.session.findOne(['_id', key]).limit(['profile', true]).on(function ($body) {
                 $c = new KKuTu.Client(socket, $body ? $body.profile : null, key);
-                $c.admin = GLOBAL.ADMIN.indexOf($c.id) != -1;
+                $c.admin = ADMIN.indexOf($c.id) != -1;
 
                 if (!$c.admin && Object.keys(DIC).length >= KKUTU_MAX) {
                     $c.sendError('full');
@@ -608,10 +637,10 @@ export async function init (_SID, _CHAN) {
                         DNAME[($c.profile.title || $c.profile.name).replace(/\s/g, "")] = $c.id;
                         MainDB.users.update(['_id', $c.id]).set(['server', SID]).on();
 
-                        if (($c.guest && GLOBAL.CAPTCHA_TO_GUEST) || alwaysTriggerCaptcha) {
+                        if (($c.guest && CAPTCHA_TO_GUEST) || alwaysTriggerCaptcha) {
                             $c.socket.send(JSON.stringify({
                                 type: 'captcha',
-                                siteKey: GLOBAL.CAPTCHA_SITE_KEY
+                                siteKey: CAPTCHA_SITE_KEY
                             }));
                         } else {
                             $c.passCaptcha = true;
@@ -651,6 +680,16 @@ export async function init (_SID, _CHAN) {
 function joinNewUser($c) {
     if (initUserRating($c)) return; // 레이팅 초기화시 값이 true -> 유저 입장 처리 안함
 
+    let event = {};
+    event.status = KKuTu.isEventGoing();
+    if (event.status) {
+        event.point = EVENT_POINT.IS_ENABLED;
+        event.team = event.point && EVENT_POINT.ENABLE_TEAM;
+        if (event.team) event.teamList = EVENT_POINT.TEAM_LIST;
+        event.wordpiece = EVENT_WORDPIECE.IS_ENABLED;
+        event.itempiece = EVENT_ITEMPIECE.IS_ENABLED;
+    }
+
     $c.send('welcome', {
         id: $c.id,
         guest: $c.guest,
@@ -662,7 +701,8 @@ function joinNewUser($c) {
         friends: $c.friends,
         admin: $c.admin,
         test: global.test,
-        caj: !!$c._checkAjae
+        caj: !!$c._checkAjae,
+        event: event
     });
     narrateFriends($c.id, $c.friends, "on");
     KKuTu.publish('conn', {user: $c.getData()});
@@ -967,6 +1007,12 @@ function processClientRequest($c, msg) {
             if (!(item = MainDB.shop[msg.item])) return $c.sendError(430);
             if (item.group == "CNS") $c.consume(item, msg.count);
             else $c.equipItem(item, msg.slot);
+            break;
+        case 'getExchanges':
+            $c.send('exchangeData', { exchange: EVENT_ITEMPIECE.EXCHANGE });
+            break;
+        case 'exchange':
+            $c.exchange(msg.id);
             break;
         case 'polygama':
             processSuspicion.call(this, $c, msg);

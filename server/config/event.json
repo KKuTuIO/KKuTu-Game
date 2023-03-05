@@ -1,0 +1,120 @@
+{
+  "STARTING_YEAR": 2023,
+  "STARTING_MONTH": 1,
+  "STARTING_DATE": 1,
+  "STARTING_HOUR": 0,
+
+  "EVENT_ID": "",
+  "EVENT_FORCE_FOR_ADMIN": false,
+
+  "EVENT_DURATION": 7,
+  "EVENT_EXPIRE": 14,
+
+  "EVENT_WORDPIECE": {
+    "IS_ENABLED": false,
+    "DROP_RATE": 0.06,
+    "LANG_ENABLED_FOR": {
+      "ko": false,
+      "en": false,
+      "ja": false
+    },
+    "IS_THEME_LIMITED": {
+      "ko": false,
+      "en": false,
+      "ja": false
+    },
+    "DROP_THEMES": {
+      "ko": [],
+      "en": [],
+      "ja": []
+    }
+  },
+
+  "EVENT_POINT": {
+    "IS_ENABLED": false,
+    "ENABLE_TEAM": false,
+    "TEAM_LIST": [ "EXAMPLE", "EXAMPLE2", "EXAMPLE3" ],
+    "INIT_POINT": 5,
+    "REWARD_AMOUNT": {
+      "200": [0, 0, 0, 0, 1, 2, 3, 4],
+      "400": [1, 2, 3, 3, 4, 5, 6, 7],
+      "800": [3, 4, 5, 6, 7, 8, 9, 10]
+    }
+  },
+
+  "EVENT_ITEMPIECE": {
+    "IS_ENABLED": false,
+    "POINT_VALUE": 5,
+    "PIECE_POOL": {
+      "EXAMPLE_PIECE": 10,
+      "EXAMPLE_PIECE2": 5,
+      "EXAMPLE_PIECE3": 5
+    },
+    "REWARD_AMOUNT": {
+      "200": [0, 0, 0, 0, 1, 1],
+      "400": [0, 0, 1, 1, 1, 2],
+      "800": [0, 1, 1, 1, 2, 2]
+    },
+    "EXCHANGE": [
+      {
+        "id": "",
+        "cost": {
+          "EXAMPLE_PIECE": 3
+        },
+        "gives": {
+          "EXAMPLE": 1,
+          "ep": 40
+        },
+        "stockLimit": 0,
+        "buyLimit": 0,
+        "isConvert": false
+      },
+      {
+        "id": "preconfigurated",
+        "cost": {
+          "ep": 20,
+          "EXAMPLE2_PIECE": 3
+        },
+        "gives": {
+          "EXAMPLE2": 1
+        },
+        "stockLimit": 0,
+        "buyLimit": 20,
+        "isConvert": false
+      },
+      {
+        "id": "",
+        "cost": {
+          "EXAMPLE_PIECE": 1
+        },
+        "gives": {
+          "EXAMPLE2_PIECE": 1
+        },
+        "stockLimit": 0,
+        "buyLimit": 20,
+        "isConvert": true
+      }
+    ],
+    "ENABLE_GIFT": false
+  },
+
+  "EVENT_SUPPORT": {
+    "IS_ENABLED": false,
+    "ITEMS": [
+      {
+        "id": "SUPPORT_TEST",
+        "value": 3
+      },
+      {
+        "id": "SUPPORT_TEST_EVNLIM",
+        "value": 3,
+        "expire": -1
+      },
+      {
+        "id": "SUPPORT_TEST_LIM",
+        "value": 3,
+        "expire": 3
+      }
+    ]
+  }
+}

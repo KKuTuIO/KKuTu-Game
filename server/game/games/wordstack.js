@@ -19,11 +19,11 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { KOR_FLAG, KOR_STRICT, KOR_GROUP, ENG_ID, WPE_CHECK } from '../../const.js';
 import { Tail, all as LizardAll } from '../../sub/lizard.js';
-import { DB, DIC, getChar, getSubChar, getPreScore, getMission, getRandom,
+import { DB, DIC, runAs, getChar, getSubChar, getPreScore, getMission, getRandom,
     getWordList, ROBOT_START_DELAY, ROBOT_HIT_LIMIT, ROBOT_LENGTH_LIMIT,
-    ROBOT_THINK_COEF, ROBOT_TYPE_COEF } from './_common.js';
+    ROBOT_THINK_COEF, ROBOT_TYPE_COEF, KOR_FLAG, KOR_STRICT, KOR_GROUP,
+    ENG_ID, WPE_CHECK } from './_common.js';
 
 let WISH_WORD_CACHE = {'ko': {}, 'en': {}};
 
@@ -87,7 +87,7 @@ export function roundReady (){
             pool: my.game.pool, // TODO: 클라이언트에서는 자신의 풀 데이터만 볼 수 있도록
             subpool: subPool,
         }, true);
-        setTimeout(my.turnStart, 2400);
+        setTimeout(runAs, 2400, my, my.turnStart);
     } else {
         my.roundEnd();
     }
@@ -97,7 +97,7 @@ export function turnStart (){
     let my = this;
 
     my.game.late = false;
-    my.game.qTimer = setTimeout(my.turnEnd, my.game.roundTime);
+    my.game.qTimer = setTimeout(runAs, my.game.roundTime, my, my.turnEnd);
     my.byMaster('turnStart', { roundTime: my.game.roundTime }, true);
     for(let i in my.game.robots){
         my.readyRobot(my.game.robots[i]);
@@ -111,14 +111,14 @@ export function turnEnd (){
     if(!my.game.seq) return;
     
     if(my.game.loading){
-        my.game.turnTimer = setTimeout(my.turnEnd, 100);
+        my.game.turnTimer = setTimeout(runAs, 100, my, my.turnEnd);
         return;
     }
     my.game.late = true;
     my.byMaster('turnEnd', {
         ok: false
     }, true);
-    my.game._rrt = setTimeout(my.roundReady, (my.game.round == my.round) ? 3000 : 10000);
+    my.game._rrt = setTimeout(runAs, (my.game.round == my.round) ? 3000 : 10000, my, my.roundReady);
     clearTimeout(my.game.robotTimer);
 }
 
@@ -193,7 +193,7 @@ export function submit (client, text){
                 if(my.game.mission === client.id) {
                     my.game.mission = getMission(my.rule.lang);
                 }
-                // setTimeout(my.turnNext, my.game.turnTime / 6);
+                // setTimeout(runAs, my.game.turnTime / 6, my, my.turnNext);
                 if(!client.robot){
                     client.invokeWordPiece(text, 1);
                     if (client.game.wpe !== undefined && $doc && WPE_CHECK(my.rule.lang, $doc.theme))
@@ -289,7 +289,7 @@ export function readyRobot (robot){
 
     let pool = my.game.pool[robot.id];
     if (!pool.length) {
-        setTimeout(my.readyRobot, delay, robot);
+        setTimeout(runAs, delay, my, my.readyRobot, robot);
         return;
     }
     let chain = my.game.chain[robot.id];
@@ -359,8 +359,8 @@ export function readyRobot (robot){
                             continue;
                     }
                     target = word;
-                    // 1/30으로 더 긴 단어를 찾지 않고 그대로 입력
-                    if (Math.random() * 30 < 1) break;
+                    // 1/16으로 더 긴 단어를 찾지 않고 그대로 입력
+                    if (Math.random() * 16 < 1) break;
                 }
             }
         }
@@ -373,8 +373,8 @@ export function readyRobot (robot){
     function after(){
         delay += text.length * ROBOT_TYPE_COEF[level];
         // my.game.chain[client.id].push(text);
-        setTimeout(my.turnRobot, delay, robot, text);
-        setTimeout(my.readyRobot, delay, robot);
+        setTimeout(runAs, delay, my, my.turnRobot, robot, text);
+        setTimeout(runAs, delay, my, my.readyRobot, robot);
     }
     function getWishList(list){
         let R = new Tail();

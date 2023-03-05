@@ -16,17 +16,9 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import * as Const from '../../const.js';
 import { Tail, all as LizardAll } from '../../sub/lizard.js';
-let DB;
-let DIC;
-let ROOM;
+import { DB, DIC } from './_common.js'
 
-export function init (_DB, _DIC, _ROOM) {
-    DB = _DB;
-    DIC = _DIC;
-    ROOM = _ROOM;
-}
 export function getTitle () {
     let R = new Tail();
     let my = this;

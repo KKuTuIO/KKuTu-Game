@@ -19,8 +19,7 @@
 const LANG = ["ko", "en"];
 
 import * as pgPool from 'pg-pool';
-import GLOBAL from "./global.json" assert { type: "json" };
-import { KOR_GROUP, ENG_ID, IJP_EXCEPT } from "../const.js";
+import { PG_USER, PG_PASS, PG_PORT, PG_DB, IJP_EXCEPT } from "../config.js";
 import * as IOLog from "./KKuTuIOLog.js";
 import { Agent } from "./collection.js";
 import { Tail } from "./lizard.js";
@@ -30,6 +29,14 @@ import * as VendorDBMigration from "./VendorDBMigration.js";
 import * as SuspicionLog from "./utils/SuspicionLog.js";
 import { createClient as CreateRedis } from "redis";
 export { ConnectionLog, UserBlockModule, VendorDBMigration, SuspicionLog };
+
+const KOR_GROUP = new RegExp("(,|^)(" + [
+    "0", "1", "3", "7", "8", "11", "9",
+    "16", "15", "17", "2", "18", "20", "26", "19",
+    "INJEONG"
+].join('|') + ")(,|$)");
+const ENG_ID = /^[a-z]+$/i;
+const JPN_ID = new RegExp(); // 일본어 제시어 필터, 추가 필요
 
 const FAKE_REDIS_FUNC = () => {
     let R = new Tail();
@@ -46,10 +53,10 @@ const FAKE_REDIS = {
 
 const Redis = CreateRedis();
 let Pg = new pgPool.default({
-    user: GLOBAL.PG_USER,
-    password: GLOBAL.PG_PASS,
-    port: GLOBAL.PG_PORT,
-    database: GLOBAL.PG_DB,
+    user: PG_USER,
+    password: PG_PASS,
+    port: PG_PORT,
+    database: PG_DB,
 });
 Redis.on('connect', function () {
     connectPg();

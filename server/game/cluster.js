@@ -16,9 +16,13 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import serverNames from '../sub/serverNames.json' assert { type: "json" };
+import { readFileSync } from 'fs';
+import { dirname } from 'path';
+import { fileURLToPath } from 'url';
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const serverNames = JSON.parse(readFileSync(`${__dirname}/../config/serverNames.json`, 'utf8'));
 import Cluster from "cluster";
-import { MAIN_PORTS } from '../const.js';
+import { MAIN_PORTS } from '../config.js';
 import * as IOLog from '../sub/KKuTuIOLog.js';
 
 let SID = Number(process.argv[2]);
