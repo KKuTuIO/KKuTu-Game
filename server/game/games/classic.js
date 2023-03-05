@@ -22,7 +22,7 @@ import { DB, DIC, runAs, shuffle, getMission, getChar, getSubChar, getPenalty,
     getRandom, getManner, getWordList, getPreScore, getRandomChar,
     ROBOT_START_DELAY, ROBOT_HIT_LIMIT, ROBOT_LENGTH_LIMIT,
     ROBOT_THINK_COEF, ROBOT_TYPE_COEF, EXAMPLE_TITLE, GAME_TYPE,
-    KOR_GROUP, ENG_ID, JPN_ID, WPE_CHECK, KOR_FLAG } from './_common.js';
+    KOR_GROUP, ENG_ID, JPN_ID, WPE_CHECK, KOR_FLAG, KOR_STRICT } from './_common.js';
 
 let WISH_WORD_CACHE = {'ko': {}, 'en': {}};
 
@@ -549,6 +549,7 @@ export function readyRobot (robot) {
         let firstMove = my.game.chain.length < 1;
         if (list) {
             for (word of list) {
+                if (my.game.wordLength && word._id.length != my.game.wordLength) continue; // 단어 길이 불일치
                 if (word._id.length > ROBOT_LENGTH_LIMIT[level]) continue;
                 if (ROBOT_HIT_LIMIT[level] > word.hit) continue;
                 if (my.game.chain.includes(word._id)) continue;
