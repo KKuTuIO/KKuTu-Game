@@ -1113,9 +1113,16 @@ export class Client {
         let k;
 
         for (k in target.cost) { // 검사부터 진행, 클라이언트에서 한번 걸러서 응답받기 때문에 아이템이 부족하면 잘못된 요청임
-            if (k == "ep" && this.event.point < target.cost[k]) return this.sendError(400);
-            else if (k == "ping" && this.money < target.cost[k]) return this.sendError(400);
-            else if (!this.box.hasOwnProperty(k) || this.box[k].value < target.cost[k]) return this.sendError(400);
+            switch(k) {
+                case "ep":
+                    if (this.event.point < target.cost[k]) return this.sendError(400);
+                    break;
+                case "ping":
+                    if (this.money < target.cost[k]) return this.sendError(400);
+                    break;
+                default:
+                    if (!this.box.hasOwnProperty(k) || this.box[k].value < target.cost[k]) return this.sendError(400);
+            }
         }
 
         for (k in target.cost) {
