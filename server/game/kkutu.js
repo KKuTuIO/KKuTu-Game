@@ -976,8 +976,8 @@ export class Client {
                 this.data.score += value;
                 exp += value;
             } else if (id == "ep") {
-                this.event.ep += value;
-                this.setFlag("eventPoint", this.event.ep);
+                this.event.point += value;
+                this.setFlag("eventPoint", this.event.point);
                 let total = this.getFlag("epTotal") + value;
                 this.setFlag("epTotal", total);
                 ep += value;
@@ -1006,7 +1006,7 @@ export class Client {
                             let base;
                             if (curr.type == "money") base = this.money;
                             else if (curr.type == "exp") base = this.data.score;
-                            else if (curr.type == "ep") base = this.event.ep;
+                            else if (curr.type == "ep") base = this.event.point;
                             else continue; // 여기로 오면 안된다.
                             addResult(curr.type, Math.round(Math.sqrt(4 + 3.6 * base) / 2));
                         }
