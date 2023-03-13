@@ -981,6 +981,7 @@ export class Client {
                 let total = this.getFlag("epTotal") + value;
                 this.setFlag("epTotal", total);
                 ep += value;
+                this.flush(false, false, false, true);
             }
             else this.obtain(id, {q: value.q, x: value.x, mx: value.mx});
             // 아이템은 obtain 함수에서 준 것으로 처리한다
