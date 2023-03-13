@@ -995,7 +995,7 @@ export class Client {
                 else if (curr.from == "wei") {
                     while (r-- > 0) {
                         i = getWeightedRandom(curr.pool);
-                        addResult(curr.type, i);
+                        addResult(curr.type, parseFloat(i));
                     }
                 } else {
                     let base = (curr.type == "money" ? this.money : this.data.score);
