@@ -17,6 +17,8 @@ node_modules/**
 .idea
 logs/**
 suspicions/**
+.DS_Store
+
 Game 1.bat
 Game 2.bat
 Game 3.bat
