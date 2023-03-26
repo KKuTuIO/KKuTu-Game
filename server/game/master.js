@@ -743,7 +743,7 @@ function heartbeat(id) {
     $c.ackWaiting = true;
 
     // 8번 응답할동안 다른 패킷이 전송되지 않음
-    if ($c.ackCount == 8) $c.send('notice', {value: "사용자님의 동작이 2시간동안 감지되지 않았습니다. 15분 이내로 어떠한 동작을 수행하지 않으면 원활한 서비스를 위해 강제 퇴장 조치됩니다."});
+    if ($c.ackCount == 12) $c.send('notice', {value: "사용자님의 동작이 2시간동안 감지되지 않았습니다. 15분 이내로 어떠한 동작을 수행하지 않으면 원활한 서비스를 위해 강제 퇴장 조치됩니다."});
 
     // 15분 이후 다음 하트비트 전송
     $c.timers.heartbeat = setTimeout(heartbeat, 15 * 60 * 1000, id);
