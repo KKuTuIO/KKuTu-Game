@@ -323,7 +323,7 @@ function processAdmin(id, value) {
             temp = value.trim().split(" ");
             if (value.trim() == "#reload" || temp.length === 0) {
                 DIC[id].send('notice', {value: `리로드 가능한 설정 파일 목록 : ${Object.keys(reloads).join(", ")}`});
-                DIC[id].send('notice', {value: `all을 입력하면 모든 값을 다시 불러옵니다.`});
+                DIC[id].send('notice', {value: "all을 입력하면 모든 값을 다시 불러옵니다."});
                 return null;
             }
             if (temp.indexOf("all") != -1) {
@@ -343,6 +343,30 @@ function processAdmin(id, value) {
             }
             if (temp.indexOf("api") != -1) {
                 rebuildWebHook();
+            }
+            return null;
+        case "give":
+            temp = value.trim().split(" ");
+            if (value.trim() == "#give" || temp.length < 2) {
+                DIC[id].send('notice', {value: "give <대상> <아이템> [갯수] [기간] [중복획득 여부]"});
+                DIC[id].send('notice', {value: "대상 대신 all을 입력하면 모든 사용자에게 지급합니다."});
+                return null;
+            }
+            let opts = {
+                q: parseInt(temp[2]) || 1,
+                x: parseInt(temp[3]) || undefined,
+                mx: !!parseInt(temp[4]) || temp[4] == "true" || false
+            }
+            if (temp[0] == "all") {
+                IOLog.notice(`${id} 님이 모든 사용자에게 ${temp[1]} 아이템을 ${opts.q}개 지급했습니다.`);
+                if (opts.x) IOLog.debug(`만료시점 : ${opts.x}, 중복획득 : ${opts.mx}`);
+                for (let k in DIC) {
+                    DIC[k].obtain(temp[1], opts);
+                }
+            } else if (DIC.hasOwnProperty(temp[0])) {
+                IOLog.notice(`${id} 님이 ${DIC[temp[0]]} 사용자에게 ${temp[1]} 아이템을 ${opts.q}개 지급했습니다.`);
+                if (opts.x) IOLog.debug(`만료시점 : ${opts.x}, 중복획득 : ${opts.mx}`);
+                DIC[temp[0]].obtain(temp[1], opts);
             }
             return null;
 
@@ -1014,6 +1038,41 @@ function processClientRequest($c, msg) {
         case 'exchange':
             $c.exchange(msg.id);
             break;
+        case 'gift':
+            if (!KKuTu.isEventGoing() ||
+                !EVENT_ITEMPIECE.ENABLE_GIFT ||
+                !EVENT_POINT.IS_ENABLED) return $c.sendError(556); // 이벤트 진행중이 아님
+            if ($c.gaming) return $c.sendError(438); // 본인이 게임중
+            if ($c.guest) return $c.sendError(421); // 본인이 게스트
+            if (!DIC.hasOwnProperty(msg.target)) return $c.sendError(405); // 대상이 접속중이 아님
+            if (DIC[msg.target].gaming) return $c.sendError(417); // 대상이 게임중
+            if (DIC[msg.target].guest) return $c.sendError(421); // 대상이 게스트
+            if (!MainDB.shop.hasOwnProperty(msg.item)) return $c.sendError(430); // 서버에 없는 아이템
+            if (!MainDB.shop[msg.item].options.giftable) return $c.sendError(400); // 선물 불가능한 아이템
+            if (!$c.box.hasOwnProperty(msg.item)) return $c.sendError(434); // 아이템을 소지하고있지 않음
+            if (!$c.box[msg.item].value < 1) return $c.sendError(434); // 아이템이 1개 미만임..?
+            if ($c.money < 200) return $c.sendError(407); // 핑 부족
+            if ($c.event.point < 20) return $c.sendError(469); // EP 부족
+
+            let $t = DIC[msg.target];
+            let expire = $c.box[msg.item].expire || 0;
+
+            // 보낸쪽 처리
+            if (--$c.box[msg.item].value) delete $c.box[msg.item];
+            $c.money = $c.money - 200;
+            $c.event.point = $c.getFlag("eventPoint") || 0;
+            $c.event.point = $c.event.point - 20;
+            $c.setFlag("eventPoint", $c.event.point);
+            $c.send('obtain', { money: $c.money, box: $c.box, event: $c.event });
+            $c.send('gift', { to: $t.id, item: msg.item });
+            $c.flush(true, false, false, true);
+
+            // 받는쪽 처리
+            $t.obtain(msg.item, { x: expire, mx: true });
+            $t.send('obtain', { box: $c.box });
+            $t.send('gift', { from: $c.id, item: msg.item });
+            $t.flush(true, false, false, false);
+            return;
         case 'polygama':
             processSuspicion.call(this, $c, msg);
             break;
