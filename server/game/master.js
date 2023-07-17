@@ -730,11 +730,11 @@ function joinNewUser($c) {
         event.list.push(info);
         if (event.status != 1) event.status = event.status || status;
         if (status) {
-            event.point = event.point || e.EVENT_POINT.IS_ENABLED;
+            event.point = event.point || e.hasOwnProperty("EVENT_POINT");
             event.team = event.team || (event.point && e.EVENT_POINT.ENABLE_TEAM);
             if (event.team) event.teamList = event.teamList || e.EVENT_POINT.TEAM_LIST;
-            event.wordpiece = event.wordpiece || e.EVENT_WORDPIECE.IS_ENABLED;
-            event.itempiece = event.itempiece || e.EVENT_ITEMPIECE.IS_ENABLED;
+            event.wordpiece = event.wordpiece || e.hasOwnProperty("EVENT_WORDPIECE");
+            event.itempiece = event.itempiece || e.hasOwnProperty("EVENT_ITEMPIECE");
         }
     }
 
@@ -1071,7 +1071,7 @@ function processClientRequest($c, msg) {
             for (let event of EVENTS) {
                 if (KKuTu.isEventGoing(event) &&
                     event.hasOwnProperty("EVENT_ITEMPIECE") && event.EVENT_ITEMPIECE.ENABLE_GIFT &&
-                    event.hasOwnProperty("EVENT_POINT") && event.EVENT_POINT.IS_ENABLED) {
+                    event.hasOwnProperty("EVENT_POINT")) {
                         stable = true; // 이벤트 진행중
                         break;
                 }
