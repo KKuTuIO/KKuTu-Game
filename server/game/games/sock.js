@@ -17,7 +17,7 @@
  */
 
 import { Tail } from '../../sub/lizard.js';
-import { DB, DIC, runAs, KOR_GROUP, WPE_CHECK } from './_common.js';
+import { DB, DIC, runAs, KOR_GROUP } from './_common.js';
 
 const LANG_STATS = {
     'ko': {
@@ -137,7 +137,7 @@ export function submit (client, text, data) {
                 score: score
             }, true);
             client.invokeWordPiece(text, 1.1);
-            if (client.game.wpe !== undefined && $doc && WPE_CHECK(my.rule.lang, $doc.theme))
+            if (client.game.wpe !== undefined && $doc && my.wpeCheck(my.rule.lang, $doc.theme))
                 client.invokeEventPiece(text, 1.1);
         } else {
             client.chat(text);

@@ -18,7 +18,7 @@
 
 import { Tail } from '../../sub/lizard.js';
 import { DB, DIC, runAs, getTheme, getThemeWords, getRandom,
-    ROBOT_CATCH_RATE, ROBOT_TYPE_COEF, KOR_GROUP, WPE_CHECK } from './_common.js';
+    ROBOT_CATCH_RATE, ROBOT_TYPE_COEF, KOR_GROUP } from './_common.js';
 
 let robotTimers = {};
 const INIT_SOUNDS = ["ㄱ", "ㄲ", "ㄴ", "ㄷ", "ㄸ", "ㄹ", "ㅁ", "ㅂ", "ㅃ", "ㅅ", "ㅆ", "ㅇ", "ㅈ", "ㅉ", "ㅊ", "ㅋ", "ㅌ", "ㅍ", "ㅎ"];
@@ -154,7 +154,7 @@ export function submit (client, text) {
             bonus: 0
         }, true);
         client.invokeWordPiece(text, 0.9);
-        if (client.game.wpe !== undefined && WPE_CHECK(my.rule.lang, $ans.theme))
+        if (client.game.wpe !== undefined && my.wpeCheck(my.rule.lang, $ans.theme))
             client.invokeEventPiece(text, 0.9);
         while (my.game.meaned < my.game.hint.length) {
             turnHint.call(my);

@@ -17,7 +17,7 @@
  */
 
 import { Tail, all as LizardAll } from '../../sub/lizard.js';
-import { DB, DIC, runAs, WPE_CHECK/*,
+import { DB, DIC, runAs/*,
     ROBOT_SEEK_DELAY, ROBOT_CATCH_RATE, ROBOT_TYPE_COEF*/ } from './_common.js';
 
 export function getTitle () {
@@ -189,7 +189,7 @@ export function submit (client, text, data) {
             });
             client.invokeWordPiece(text, 1.2);
             // 추후 고칠것, my.game.means에서 찾아야함
-            if (client.game.wpe !== undefined && WPE_CHECK(my.rule.lang))
+            if (client.game.wpe !== undefined && my.wpeCheck(my.rule.lang))
                 client.invokeEventPiece(text, 1.2);
             if (--my.game.numQ < 1) {
                 clearTimeout(my.game.qTimer);

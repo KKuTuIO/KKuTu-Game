@@ -19,7 +19,7 @@
 import { Tail } from '../../sub/lizard.js';
 import { DB, DIC, runAs, getTheme, getMission, getThemeWords, getRandom,
     getPenalty, getPreScore, toRegex, ROBOT_START_DELAY, ROBOT_TYPE_COEF,
-    ROBOT_THINK_COEF, ROBOT_HIT_LIMIT, ROBOT_LENGTH_LIMIT, WPE_CHECK } from './_common.js';
+    ROBOT_THINK_COEF, ROBOT_HIT_LIMIT, ROBOT_LENGTH_LIMIT } from './_common.js';
 
 export function getTitle () {
     let R = new Tail();
@@ -146,7 +146,7 @@ export function submit (client, text, data) {
                 setTimeout(runAs, my.game.turnTime / 6, my, my.turnNext);
                 if (!client.robot) {
                     client.invokeWordPiece(text, 1);
-                    if (client.game.wpe !== undefined && $doc && WPE_CHECK(my.rule.lang, $doc.theme))
+                    if (client.game.wpe !== undefined && $doc && my.wpeCheck(my.rule.lang, $doc.theme))
                         client.invokeEventPiece(text, 1);
                     DB.kkutu[l].update(['_id', text]).set(['hit', $doc.hit + 1]).on();
                 }

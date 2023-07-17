@@ -22,7 +22,7 @@ import { DB, DIC, runAs, shuffle, getMission, getChar, getSubChar, getPenalty,
     getRandom, getManner, getWordList, getPreScore, getRandomChar,
     ROBOT_START_DELAY, ROBOT_HIT_LIMIT, ROBOT_LENGTH_LIMIT,
     ROBOT_THINK_COEF, ROBOT_TYPE_COEF, EXAMPLE_TITLE, GAME_TYPE,
-    KOR_GROUP, ENG_ID, JPN_ID, WPE_CHECK, KOR_FLAG, KOR_STRICT } from './_common.js';
+    KOR_GROUP, ENG_ID, JPN_ID, KOR_FLAG, KOR_STRICT } from './_common.js';
 
 let WISH_WORD_CACHE = {'ko': {}, 'en': {}};
 
@@ -303,7 +303,7 @@ export function submit (client, text) {
                 setTimeout(runAs, my.game.turnTime / 6, my, my.turnNext);
                 if (!client.robot) {
                     client.invokeWordPiece(text, 1);
-                    if (client.game.wpe !== undefined && $doc && WPE_CHECK(my.rule.lang, $doc.theme))
+                    if (client.game.wpe !== undefined && $doc && my.wpeCheck(my.rule.lang, $doc.theme))
                         client.invokeEventPiece(text, 1);
                     DB.kkutu[l].update(['_id', text]).set(['hit', $doc.hit + 1]).on();
                 }

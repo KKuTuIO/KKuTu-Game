@@ -76,6 +76,7 @@ reloads.automod();
 /*---- event ----*/
 const DAY = 86400000; // 시간 계산용 하루 길이
 
+/* 기존 컨픽 데이터
 // 테스트용, 켜두면 관리자는 항상 이벤트 조각을 얻을 수 있음
 export let EVENT_FORCE_FOR_ADMIN;
 
@@ -90,8 +91,12 @@ export let EVENT_WORDPIECE;
 export let EVENT_POINT;
 export let EVENT_ITEMPIECE;
 export let EVENT_SUPPORT;
+*/
+
+export let EVENTS;
 
 reloads.event = () => {
+    /* 기존 데이터
     let STARTING_YEAR;
     let STARTING_MONTH;
     let STARTING_DATE;
@@ -112,21 +117,48 @@ reloads.event = () => {
         EVENT_ITEMPIECE,
         EVENT_SUPPORT
     } = getJson('event.json'));
-    // 이벤트 글자조각 드랍 시작 / 종료 / 기간 만료 계산
-    EVENT_START = new Date(STARTING_YEAR, STARTING_MONTH - 1, STARTING_DATE, STARTING_HOUR).getTime();
-    EVENT_UNTIL = EVENT_START + (DAY * EVENT_DURATION);
-    EVENT_EXPIRE_AT = Math.floor((EVENT_UNTIL + (DAY * EVENT_EXPIRE)) / 1000);
-    EVENT_ID = EVENT_ID || "event." + Math.floor(EVENT_START / 1000); // 자동지정일때
+    */
+    EVENTS = getJson('event.json');
 
-    EVENT_POINT.REWARD_BORDER = Object.keys(EVENT_POINT.REWARD_AMOUNT).map(v => parseInt(v)).sort((a,b) => a-b);
-    EVENT_ITEMPIECE.PIECE_LIST = Object.keys(EVENT_ITEMPIECE.PIECE_POOL);
-    EVENT_ITEMPIECE.REWARD_BORDER = Object.keys(EVENT_ITEMPIECE.REWARD_AMOUNT).map(v => parseInt(v)).sort((a,b) => a-b);
-    let auto = 0;
-    for (let k in EVENT_ITEMPIECE.EXCHANGE) {
-        if (EVENT_ITEMPIECE.EXCHANGE[k].id) continue;
-        EVENT_ITEMPIECE.EXCHANGE[k].id = "exchange." + (auto++)
+    for (let event of EVENTS) {
+        let STARTING_YEAR;
+        let STARTING_MONTH;
+        let STARTING_DATE;
+        let STARTING_HOUR;
+        let EVENT_DURATION; // 이벤트 시작 ~ 드랍 비활성화 일수
+        let EVENT_EXPIRE; // 드랍 비활성화 시점 ~ 만료일 일수
+
+        ({
+            STARTING_YEAR,
+            STARTING_MONTH,
+            STARTING_DATE,
+            STARTING_HOUR,
+            EVENT_DURATION,
+            EVENT_EXPIRE,
+        } = event)
+
+        EVENT_DURATION = EVENT_DURATION || 7;
+        EVENT_EXPIRE = EVENT_EXPIRE || 14;
+
+            // 이벤트 글자조각 드랍 시작 / 종료 / 기간 만료 계산
+        event.EVENT_START = new Date(STARTING_YEAR, STARTING_MONTH - 1, STARTING_DATE, STARTING_HOUR).getTime();
+        event.EVENT_UNTIL = event.EVENT_START + (DAY * EVENT_DURATION);
+        event.EVENT_EXPIRE_AT = Math.floor((event.EVENT_UNTIL + (DAY * EVENT_EXPIRE)) / 1000);
+        event.EVENT_ID = event.EVENT_ID || "event." + Math.floor(event.EVENT_START / 1000); // 자동지정일때
+
+        if (event.hasOwnProperty("EVENT_POINT"))
+            event.EVENT_POINT.REWARD_BORDER = Object.keys(event.EVENT_POINT.REWARD_AMOUNT).map(v => parseInt(v)).sort((a,b) => a-b);
+        if (event.hasOwnProperty("EVENT_ITEMPIECE")) {
+            event.EVENT_ITEMPIECE.PIECE_LIST = Object.keys(event.EVENT_ITEMPIECE.PIECE_POOL);
+            event.EVENT_ITEMPIECE.REWARD_BORDER = Object.keys(event.EVENT_ITEMPIECE.REWARD_AMOUNT).map(v => parseInt(v)).sort((a,b) => a-b);
+            let auto = 0;
+            for (let k in event.EVENT_ITEMPIECE.EXCHANGE) {
+                if (event.EVENT_ITEMPIECE.EXCHANGE[k].id) continue;
+                event.EVENT_ITEMPIECE.EXCHANGE[k].id = "exchange." + (auto++)
+            }
+        }
     }
-    /* 자동변환, 시스템 엎어져서 안씀
+    /* 자동변환, 시스템 개편으로 사용하지 않음
     let from, to, newData;
     for (from of EVENT_ITEMPIECE.PIECE_LIST) {
         for (to of EVENT_ITEMPIECE.PIECE_LIST) {

@@ -104,7 +104,11 @@ process.on('message', function (msg) {
         case 'refresh':
             if (!DIC.hasOwnProperty(msg.id)) break;
             let $c = DIC[msg.id];
-            if ($c.gaming) break;
+            let $r = ROOM[$c.place];
+            if (!$r || $r.gaming) {
+                $c.waitGame = true;
+                break;
+            }
             $c.refresh();
             break;
         case "reload":

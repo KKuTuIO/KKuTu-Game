@@ -18,7 +18,7 @@
 
 import { Tail } from '../../sub/lizard.js';
 import { PROVERBS } from './typing_const.js';
-import { DB, DIC, runAs, traverse, WPE_CHECK } from './_common.js';
+import { DB, DIC, runAs, traverse } from './_common.js';
 
 let LIST_LENGTH = 180;
 let DOUBLE_VOWELS = [9, 10, 11, 14, 15, 16, 19];
@@ -127,7 +127,7 @@ export function submit (client, text) {
         }, true);
         client.invokeWordPiece(text, 0.5);
         // 현재로썬 테마 검증이 불가능, 다른 이벤트 하기 전에 고치거나 비활성화
-        if (client.game.wpe !== undefined && WPE_CHECK(my.rule.lang))
+        if (client.game.wpe !== undefined && my.wpeCheck(my.rule.lang))
             client.invokeEventPiece(text, 0.5);
     } else {
         client.game.miss++;

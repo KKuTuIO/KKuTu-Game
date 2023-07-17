@@ -16,8 +16,8 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { GAME_TYPE, MISSION, MISSION_TACT, EVENT_WORDPIECE, EXAMPLE_TITLE } from '../../config.js';
-export { GAME_TYPE, MISSION, MISSION_TACT, EVENT_WORDPIECE, EXAMPLE_TITLE };
+import { GAME_TYPE, MISSION, MISSION_TACT, EXAMPLE_TITLE } from '../../config.js';
+export { GAME_TYPE, MISSION, MISSION_TACT, EXAMPLE_TITLE };
 import { Tail } from '../../sub/lizard.js';
 import MultiArray from 'multiarr';
 export let DB;
@@ -425,25 +425,4 @@ export function getPreScore (text, chainArr, tr) {
 }
 export function getPenalty (chain, score) {
     return -1 * Math.round(Math.min(10 + (chain || []).length * 2.1 + score * 0.15, score));
-}
-
-// 이벤트 글자 조각 드랍 제한 확인 함수
-export function WPE_CHECK (lang, theme) {
-    let THEMERULE = [];
-    if (!EVENT_WORDPIECE.LANG_ENABLED_FOR[lang]) return false;
-    
-    if (EVENT_WORDPIECE.IS_THEME_LIMITED[lang]) {
-        if (!theme || theme.length == 0) return false;
-        let THEMERULE = EVENT_WORDPIECE.DROP_THEMES[lang];
-        let drop = false;
-        theme = theme.split(',');
-        for (let t of theme) {
-            if (THEMERULE.indexOf(t) != -1) {
-                drop = true;
-                break;
-            }
-        }
-        return drop;
-    }
-    return true;
 }

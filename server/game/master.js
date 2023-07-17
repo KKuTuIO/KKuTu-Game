@@ -24,7 +24,7 @@ import * as KKuTu from './kkutu.js';
 import { decrypt } from "../sub/crypto.js";
 import { reloads, DISCORD_WEBHOOK, GAME_TYPE, IS_WS_SECURED, WEB_KEY, CRYPTO_KEY,
     ADMIN, CAPTCHA_TO_GUEST, CAPTCHA_SITE_KEY,
-    TEST_PORT, KKUTU_MAX, TESTER, CAPTCHA_TO_USER, EVENT_WORDPIECE, EVENT_POINT, EVENT_ITEMPIECE } from "../config.js";
+    TEST_PORT, KKUTU_MAX, TESTER, CAPTCHA_TO_USER, EVENTS } from "../config.js";
 import * as IOLog from '../sub/KKuTuIOLog.js';
 import Secure from '../sub/secure.js';
 import { verifyCaptcha } from '../sub/captcha.js';
@@ -348,8 +348,7 @@ function processAdmin(id, value) {
         case "give":
             temp = value.trim().split(" ");
             if (value.trim() == "#give" || temp.length < 2) {
-                DIC[id].send('notice', {value: "give <대상> <아이템> [갯수] [기간] [중복획득 여부]"});
-                DIC[id].send('notice', {value: "대상 대신 all을 입력하면 모든 사용자에게 지급합니다."});
+                DIC[id].send('notice', {value: "give <대상|all> <아이템> [갯수] [기간] [중복 획득 여부]"});
                 return null;
             }
             let opts = {
@@ -362,11 +361,15 @@ function processAdmin(id, value) {
                 if (opts.x) IOLog.debug(`만료시점 : ${opts.x}, 중복획득 : ${opts.mx}`);
                 for (let k in DIC) {
                     DIC[k].obtain(temp[1], opts);
+                    DIC[k].flush(true);
+                    if (DIC[k].place) KKuTu.publish('refresh', { id: k });
                 }
             } else if (DIC.hasOwnProperty(temp[0])) {
                 IOLog.notice(`${id} 님이 ${DIC[temp[0]]} 사용자에게 ${temp[1]} 아이템을 ${opts.q}개 지급했습니다.`);
                 if (opts.x) IOLog.debug(`만료시점 : ${opts.x}, 중복획득 : ${opts.mx}`);
                 DIC[temp[0]].obtain(temp[1], opts);
+                DIC[temp[0]].flush(true);
+                if (DIC[temp[0]].place) KKuTu.publish('refresh', { id: temp[0] });
             }
             return null;
 
@@ -705,13 +708,33 @@ function joinNewUser($c) {
     if (initUserRating($c)) return; // 레이팅 초기화시 값이 true -> 유저 입장 처리 안함
 
     let event = {};
-    event.status = KKuTu.isEventGoing();
-    if (event.status) {
-        event.point = EVENT_POINT.IS_ENABLED;
-        event.team = event.point && EVENT_POINT.ENABLE_TEAM;
-        if (event.team) event.teamList = EVENT_POINT.TEAM_LIST;
-        event.wordpiece = EVENT_WORDPIECE.IS_ENABLED;
-        event.itempiece = EVENT_ITEMPIECE.IS_ENABLED;
+    event.list = [];
+    for (let e of EVENTS) {
+        let status = KKuTu.isEventGoing(e);
+        let info = {
+            start: e.EVENT_START,
+            until: e.EVENT_UNTIL,
+            status: status,
+            id: e.EVENT_ID,
+            name: e.EVENT_NAME,
+            description: e.EVENT_DESCRIPTION,
+            link: e.EVENT_LINK,
+            type: {
+                wordpiece: e.hasOwnProperty("EVENT_WORDPIECE"),
+                point: e.hasOwnProperty("EVENT_POINT"),
+                itempiece: e.hasOwnProperty("EVENT_ITEMPIECE"),
+                support: e.hasOwnProperty("EVENT_SUPPORT")
+            }
+        };
+        event.list.push(info);
+        if (event.status != 1) event.status = event.status || status;
+        if (status) {
+            event.point = event.point || e.EVENT_POINT.IS_ENABLED;
+            event.team = event.team || (event.point && e.EVENT_POINT.ENABLE_TEAM);
+            if (event.team) event.teamList = event.teamList || e.EVENT_POINT.TEAM_LIST;
+            event.wordpiece = event.wordpiece || e.EVENT_WORDPIECE.IS_ENABLED;
+            event.itempiece = event.itempiece || e.EVENT_ITEMPIECE.IS_ENABLED;
+        }
     }
 
     $c.send('welcome', {
@@ -1033,15 +1056,26 @@ function processClientRequest($c, msg) {
             else $c.equipItem(item, msg.slot);
             break;
         case 'getExchanges':
-            $c.send('exchangeData', { exchange: EVENT_ITEMPIECE.EXCHANGE });
+            let event = EVENTS[EVENTS.findIndex(v => v.EVENT_ID == msg.id)];
+            $c.send('exchangeData', {
+                id: msg.id,
+                exchange: event.EVENT_ITEMPIECE.EXCHANGE
+            });
             break;
         case 'exchange':
-            $c.exchange(msg.id);
+            $c.exchange(msg.eid, msg.xid);
             break;
         case 'gift':
-            if (!KKuTu.isEventGoing() ||
-                !EVENT_ITEMPIECE.ENABLE_GIFT ||
-                !EVENT_POINT.IS_ENABLED) return $c.sendError(556); // 이벤트 진행중이 아님
+            let stable = false;
+            for (let event of EVENTS) {
+                if (KKuTu.isEventGoing(event) &&
+                    event.hasOwnProperty("EVENT_ITEMPIECE") && event.EVENT_ITEMPIECE.ENABLE_GIFT &&
+                    event.hasOwnProperty("EVENT_POINT") && event.EVENT_POINT.IS_ENABLED) {
+                        stable = true; // 이벤트 진행중
+                        break;
+                }
+            }
+            if (!stable) return $c.sendError(556); // 이벤트 진행중 아님
             if ($c.gaming) return $c.sendError(438); // 본인이 게임중
             if ($c.guest) return $c.sendError(421); // 본인이 게스트
             if (!DIC.hasOwnProperty(msg.target)) return $c.sendError(405); // 대상이 접속중이 아님

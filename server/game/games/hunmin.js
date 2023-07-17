@@ -21,7 +21,7 @@ import {
     DB, DIC, runAs, getAuto, hunminRegex, getPreScore, getRandom,
     getPenalty, ROBOT_START_DELAY, ROBOT_TYPE_COEF,
     ROBOT_THINK_COEF, ROBOT_HIT_LIMIT, KOR_FLAG, KOR_STRICT,
-    KOR_GROUP, WPE_CHECK
+    KOR_GROUP
 } from './_common.js';
 
 // ㄱ, ㄴ, ㄷ, ㅁ, ㅂ, ㅅ, ㅇ, ㅈ, ㅊ, ㅌ, ㅍ, ㅎ
@@ -153,7 +153,7 @@ export function submit (client, text, data) {
                     setTimeout(runAs, my.game.turnTime / 6, my, my.turnNext);
                     if (!client.robot) {
                         client.invokeWordPiece(text, 1);
-                        if (client.game.wpe !== undefined && WPE_CHECK(my.rule.lang, $doc.theme))
+                        if (client.game.wpe !== undefined && my.wpeCheck(my.rule.lang, $doc.theme))
                             client.invokeEventPiece(text, 0.9);
                     }
                 }

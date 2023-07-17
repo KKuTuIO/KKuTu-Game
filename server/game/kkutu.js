@@ -25,10 +25,9 @@ import { init as ACInit, canRandomized,
 import { resetDaily, rewardRating, getRatingLevel } from '../sub/utils/UserRating.js';
 import { RULE, GAME_TYPE, CHAT_SPAM_ADD_DELAY, CHAT_SPAM_CLEAR_DELAY,
     CHAT_SPAM_LIMIT, CHAT_BLOCKED_LENGTH, CHAT_KICK_BY_SPAM, SPAM_ADD_DELAY,
-    SPAM_CLEAR_DELAY, SPAM_LIMIT, BLOCKED_LENGTH, KICK_BY_SPAM, EVENT_WORDPIECE,
+    SPAM_CLEAR_DELAY, SPAM_LIMIT, BLOCKED_LENGTH, KICK_BY_SPAM,
     EQUIP_SLOTS, EQUIP_GROUP, MAX_OBSERVER, OPTIONS, IJP,
-    IJP_EXCEPT, EVENT_FORCE_FOR_ADMIN, EVENT_ID, EVENT_POINT, EVENT_START,
-    EVENT_UNTIL, EVENT_EXPIRE_AT, EVENT_ITEMPIECE, EVENT_SUPPORT } from "../config.js"
+    IJP_EXCEPT, EVENTS } from "../config.js"
 import kkutuLevel from "../sub/KKuTuLevel.js";
 // 망할 셧다운제 import * as Ajae from "../sub/ajae.js";
 let DB;
@@ -142,11 +141,15 @@ export function onClientClosed (callback) {
     clientCloseHandler = callback;
 }
 
-export function isEventGoing() {
+export function getEventStatus() {
+    return EVENTS.map( v => isEventGoing(v) );
+}
+
+export function isEventGoing(event) {
     let now = new Date().getTime();
-    if (EVENT_START > now) return 0; // 이벤트 시작 전
-    if (EVENT_UNTIL > now) return 1; // 이벤트 중
-    if ((EVENT_EXPIRE_AT * 1000) > now) return 2; // 이벤트 완료 후 ~ 교환 기간
+    if (event.EVENT_START > now) return 0; // 이벤트 시작 전
+    if (event.EVENT_UNTIL > now) return 1; // 이벤트 중
+    if ((event.EVENT_EXPIRE_AT * 1000) > now) return 2; // 이벤트 완료 후 ~ 교환 기간
     return 0; // 이벤트 이미 종료됨
 }
 
@@ -383,6 +386,7 @@ export class Client {
         this.game = {};
         this.sid = sid;
         this.event = {};
+        this.waitGame = false;
 
         this.subPlace = 0;
         this.error = false;
@@ -749,30 +753,36 @@ export class Client {
                             if (first) {
                                 this.setFlag("flagSystem", 2);
                                 this.setFlag("equipMigrate", 3);
+                                this.setFlag("bought", {});
                                 this.flush(false, false, false, true);
                             } else {
                                 if (!this.getFlag("flagSystem")) this.migrateFlags();
+                                if (!this.getFlag("bought")) this.setFlag("bought", {});
                                 this.checkExpire();
                                 this.okgCount = Math.floor((this.data.playTime || 0) / PER_OKG);
                                 if (this.okgCount > MAX_OKG) this.okgCount = MAX_OKG;
                             }
 
-                            let eventStatus = isEventGoing();
+                            let eventStatus = getEventStatus();
                             let itemFlush = false;
-                            if (eventStatus) {
-                                if (eventStatus == 1) { // 이벤트 진행 중에만 갱신하는 정보
-                                    let lastEvent = this.getFlag("lastEvent");
-                                    if (EVENT_ID != lastEvent) { // 이벤트 정보 갱신 필요
-                                        this.setFlag("lastEvent", EVENT_ID)
-                                        if (EVENT_POINT.IS_ENABLED) {
-                                            this.setFlag("eventPoint", EVENT_POINT.INIT_POINT);
-                                            if (EVENT_POINT.ENABLE_TEAM) this.joinNewTeam();
+                            for (let i in EVENTS) {
+                                let event = EVENTS[i];
+                                let status = eventStatus[i];
+                                if (status) {
+                                    if (eventStatus == 1) { // 이벤트 진행 중에만 갱신하는 정보
+                                        let lastEP = this.getFlag("lastEP");
+                                        if (event.hasOwnProperty("EVENT_POINT") && event.EVENT_ID != lastEP) { // 포인트 이벤트 정보 갱신 필요
+                                            this.setFlag("lastEP", event.EVENT_ID)
+                                            this.setFlag("eventPoint", event.EVENT_POINT.INIT_POINT);
+                                            if (event.EVENT_POINT.ENABLE_TEAM) this.joinNewTeam();
                                         }
-                                        if (EVENT_SUPPORT.IS_ENABLED) {
+                                        let lastSupport = this.getFlag("lastSupport");
+                                        if (event.hasOwnProperty("EVENT_SUPPORT") && event.EVENT_ID != lastSupport) {
+                                            this.setFlag("lastSupport", event.EVENT_ID)
                                             itemFlush = true;
-                                            for (let item of EVENT_SUPPORT.ITEMS) {
+                                            for (let item of event.EVENT_SUPPORT.ITEMS) {
                                                 if (item.expire == -1) {
-                                                    this.obtain(item.id, {q: item.value, x: EVENT_EXPIRE_AT, mx: true})
+                                                    this.obtain(item.id, {q: item.value, x: event.EVENT_EXPIRE_AT, mx: true})
                                                     continue;
                                                 } else if (item.expire > 0) {
                                                     let expire = Math.floor(new Date().getTime() / 1000) + (item.expire * 86400);
@@ -785,14 +795,16 @@ export class Client {
                                             }
                                         }
                                     }
-                                }
-                                // 종료 전까지 항상 갱신되는 정보
-                                if (EVENT_POINT.IS_ENABLED) {
-                                    this.event.point = this.getFlag("eventPoint") || 0;
-                                    this.event.epTotal = this.getFlag("epTotal") || 0;
-                                    if (EVENT_POINT.ENABLE_TEAM) this.event.team = this.getFlag("eventTeam");
+
+                                    // 종료 전까지 항상 갱신되는 정보
+                                    if (event.hasOwnProperty("EVENT_POINT")) {
+                                        this.event.point = this.getFlag("eventPoint") || 0;
+                                        this.event.epTotal = this.getFlag("epTotal") || 0;
+                                        if (event.EVENT_POINT.ENABLE_TEAM) this.event.team = this.getFlag("eventTeam");
+                                    }
                                 }
                             }
+                            
                             this.flush(itemFlush, false, false, true);
 
                             if (black) {
@@ -913,19 +925,36 @@ export class Client {
         if (!this.game.wpe) return;
         let v;
 
-        if (Math.random() <= EVENT_WORDPIECE.DROP_RATE * coef) {
+        if (Math.random() <= EVENTS[this.game.wpeEventIndex].EVENT_WORDPIECE.DROP_RATE * coef) {
             v = text.charAt(Math.floor(Math.random() * text.length));
             if (!v.match(/[a-z가-힣]/)) return;
             this.game.wpe.push(v);
         }
     };
 
-    static teamLenCache = EVENT_POINT.TEAM_LIST.length;
+    static teamEventId = "";
+    static teamLenCache = -1;
     static lastTeamIndex = Math.floor(Math.random() * Client.teamLenCache);
 
     joinNewTeam () {
-        if (EVENT_POINT.TEAM_LIST.length != Client.teamLenCache)
+        let index = -1;
+        for (let i in EVENTS) {
+            let event = EVENTS[i];
+            let status = isEventGoing(event)
+            if (status == 1 && event.hasOwnProperty("EVENT_POINT") && event.EVENT_POINT.ENABLE_TEAM) {
+                index = i;
+                break;
+            }
+        }
+
+        if (index == -1) return;
+        let event = EVENTS[index];
+
+        if (Client.teamEventId != event.EVENT_ID || event.EVENT_POINT.TEAM_LIST.length != Client.teamLenCache) {
+            Client.teamEventId = event.EVENT_ID;
+            Client.teamLenCache = event.EVENT_POINT.TEAM_LIST.length;
             Client.lastTeamIndex = Math.floor(Math.random() * Client.teamLenCache);
+        }
         let i = Client.lastTeamIndex = (Client.lastTeamIndex + 1) % Client.teamLenCache;
         this.setFlag("eventTeam", i + 1); // 팀 번호는 항상 +1
         return i + 1;
@@ -1105,13 +1134,24 @@ export class Client {
         this.flush(true, true, false, true);
     };
 
-    exchange (id) {
-        if (!isEventGoing()) {
-            if (!this.admin || !EVENT_FORCE_FOR_ADMIN) return this.sendError(400);
-        }
-        const index = EVENT_ITEMPIECE.EXCHANGE.findIndex((data) => data.id == id);
-        const target = EVENT_ITEMPIECE.EXCHANGE[index];
+    exchange (eid, xid) {
+        // if (!isEventGoing()) {
+        //     if (!this.admin || !EVENT_FORCE_FOR_ADMIN) return this.sendError(400);
+        // }
+        const i = EVENTS.findIndex(event => event.id == eid);
+        const event = EVENTS[i];
+        const j = event.EVENT_ITEMPIECE.EXCHANGE.findIndex(data => data.id == xid);
+        const target = event.EVENT_ITEMPIECE.EXCHANGE[j];
+        let bought = this.getFlag("bought");
         let k;
+
+        // 최소 오끄감 검증
+        if (this.okgCount < target.minimumOkg) return this.sendError(446, target.minimumOkg);
+
+        // 구매 제한
+        if (target.buyLimit !== 0 &&
+            bought[target.id] && bought[target.id] >= target.buyLimit
+        ) return this.sendError(447, target.buyLimit);
 
         for (k in target.cost) { // 검사부터 진행, 클라이언트에서 한번 걸러서 응답받기 때문에 아이템이 부족하면 잘못된 요청임
             switch(k) {
@@ -1141,6 +1181,11 @@ export class Client {
             }
         }
 
+        if (target.buyLimit !== 0) {
+            bought[target.id] += 1;
+            this.setFlag("bought", bought);
+        }
+
         for (k in target.gives) {
             if (k == "ep") {
                 this.event.point += target.gives[k];
@@ -1152,7 +1197,7 @@ export class Client {
                 this.money += target.gives[k];
                 continue;
             } else {
-                if (target.isConvert) this.obtain(k, {q: target.gives[k], x: EVENT_EXPIRE_AT, mx: true});
+                if (target.isConvert) this.obtain(k, {q: target.gives[k], x: event.EVENT_EXPIRE_AT, mx: true});
                 else this.obtain(k, {q: target.gives[k]});
                 continue;
             }
@@ -1882,7 +1927,18 @@ export class Room {
     start (pracLevel) {
         let i, j, o, hum = 0;
         let now = (new Date()).getTime();
-        this.game.event = EVENT_START < now && now < EVENT_UNTIL;
+        
+        this.game.event = false;
+        this.game.wpeEventIndex = -1;
+
+        for (let i in EVENTS) {
+            let event = EVENTS[i];
+            let status = isEventGoing(event)
+            this.game.event = this.game.event || status == 1;
+            if (this.game.wpeEventIndex == -1 && status == 1 && event.hasOwnProperty("EVENT_WORDPIECE")) {
+                this.game.wpeEventIndex = i;
+            }
+        }
 
         this.gaming = true;
         this.game.late = true;
@@ -1936,8 +1992,8 @@ export class Room {
             o.game.item = [/*0, 0, 0, 0, 0, 0*/];
             o.game.wpc = [];
             delete o.game.wpe;
-            if (this.game.event || (EVENT_FORCE_FOR_ADMIN && o.admin)) {
-                if (EVENT_WORDPIECE.IS_ENABLED) o.game.wpe = [];
+            if (this.game.event || (EVENTS.map( v => v.EVENT_FORCE_FOR_ADMIN ).reduce( (a,b) => a||b ) && o.admin)) {
+                if (this.game.wpeEventIndex !== -1) o.game.wpe = [];
             }
         }
         this.game.hum = hum;
@@ -1991,6 +2047,7 @@ export class Room {
         for (i in this.players) {
             o = DIC[this.players[i]];
             if (!o) continue;
+            if (o.waitGame) o.refresh();
             if (o.cameWhenGaming) {
                 o.cameWhenGaming = false;
                 if (o.form == "O") {
@@ -2051,43 +2108,48 @@ export class Room {
             rw.playTime = now - o.playAt;
             o.applyEquipOptions(rw); // 착용 아이템 보너스 적용
             if (rw.together) {
-                let isEvent = this.game.event || (EVENT_FORCE_FOR_ADMIN && o.admin);
+                let isEvent = this.game.event || (EVENTS.map( v => v.EVENT_FORCE_FOR_ADMIN ).reduce( (a,b) => a||b ) && o.admin);
                 if (o.game.wpc) o.game.wpc.forEach((item) => {
                     o.obtain("$WPC" + item, {q: 1});
                 }); // 글자 조각 획득 처리
                 if (isEvent) { // 이벤트 보상 처리
                     let border;
-                    if (o.game.wpe) o.game.wpe.forEach ((item) => { // 이벤트 글자 조각
-                        o.obtain("$WPE" + item, {q: 1, x: EVENT_EXPIRE_AT, mx: true});
-                    });
-                    if (EVENT_POINT.IS_ENABLED) { // 이벤트 포인트
-                        let pool = [0];
-                        let add = 0;
-                        for (border of EVENT_POINT.REWARD_BORDER) {
-                            if (border <= pv) pool = EVENT_POINT.REWARD_AMOUNT[border];
-                            else break;
-                        }
-                        rw.ep = pool[Math.floor(Math.random() * pool.length)] || 0
-                        if (rw.ep) {
-                            let amount = o.getFlag("eventPoint") + rw.ep;
-                            o.setFlag("eventPoint", amount);
-                            o.event.point = amount;
-
-                            let total = o.getFlag("epTotal") + rw.ep;
-                            o.setFlag("epTotal", total);
-                            o.event.epTotal = amount;
-                        }
+                    if (o.game.wpe) {
+                        let wpeEvent = EVENTS[this.game.wpeEventIndex];
+                        o.game.wpe.forEach ((item) => { // 이벤트 글자 조각
+                            o.obtain("$WPE" + item, {q: 1, x: wpeEvent.EVENT_EXPIRE_AT, mx: true});
+                        });
                     }
-                    if (EVENT_ITEMPIECE.IS_ENABLED) { // 이벤트 아이템 조각
-                        let pool = [0]
-                        for (border of EVENT_ITEMPIECE.REWARD_BORDER) {
-                            if (border <= pv) pool = EVENT_ITEMPIECE.REWARD_AMOUNT[border];
-                            else break;
+                    for (let event of EVENTS) {
+                        if (event.hasOwnProperty("EVENT_POINT")) { // 이벤트 포인트
+                            let pool = [0];
+                            let add = 0;
+                            for (border of event.EVENT_POINT.REWARD_BORDER) {
+                                if (border <= pv) pool = event.EVENT_POINT.REWARD_AMOUNT[border];
+                                else break;
+                            }
+                            rw.ep = pool[Math.floor(Math.random() * pool.length)] || 0
+                            if (rw.ep) {
+                                let amount = o.getFlag("eventPoint") + rw.ep;
+                                o.setFlag("eventPoint", amount);
+                                o.event.point = amount;
+
+                                let total = o.getFlag("epTotal") + rw.ep;
+                                o.setFlag("epTotal", total);
+                                o.event.epTotal = amount;
+                            }
                         }
-                        let amount = pool[Math.floor(Math.random() * pool.length)] || 0;
-                        while (amount--) {
-                            let item = getWeightedRandom(EVENT_ITEMPIECE.PIECE_POOL);
-                            o.obtain(item, {q: 1, x: EVENT_EXPIRE_AT, mx: true});
+                        if (event.hasOwnProperty("EVENT_ITEMPIECE")) { // 이벤트 아이템 조각
+                            let pool = [0]
+                            for (border of event.EVENT_ITEMPIECE.REWARD_BORDER) {
+                                if (border <= pv) pool = event.EVENT_ITEMPIECE.REWARD_AMOUNT[border];
+                                else break;
+                            }
+                            let amount = pool[Math.floor(Math.random() * pool.length)] || 0;
+                            while (amount--) {
+                                let item = getWeightedRandom(event.EVENT_ITEMPIECE.PIECE_POOL);
+                                o.obtain(item, {q: 1, x: event.EVENT_EXPIRE_AT, mx: true});
+                            }
                         }
                     }
                 }
@@ -2270,6 +2332,29 @@ export class Room {
         if (!c[func]) return IOLog.warn("Unknown function: " + func), false;
         return c[func];
     };
+
+    // 이벤트 글자 조각 드랍 제한 확인 함수
+    wpeCheck (lang, theme) {
+        if (this.game.wpeEventIndex == -1) return false;
+
+        for (let event of EVENTS.filter( v => v.hasOwnProperty("EVENT_WORDPIECE") )) {
+            let THEMERULE = [];
+            if (!event.EVENT_WORDPIECE.LANG_ENABLED_FOR[lang]) continue;
+            
+            if (event.EVENT_WORDPIECE.IS_THEME_LIMITED[lang]) {
+                if (!theme || theme.length == 0) continue;
+                let THEMERULE = event.EVENT_WORDPIECE.DROP_THEMES[lang];
+                theme = theme.split(',');
+                for (let t of theme) {
+                    if (THEMERULE.indexOf(t) != -1) {
+                        return true;
+                    }
+                }
+                continue;
+            }
+            return true;
+        }
+    }
 }
 
 function getFreeChannel() {
