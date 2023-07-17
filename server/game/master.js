@@ -1066,7 +1066,7 @@ function processClientRequest($c, msg) {
             $c.exchange(msg.eid, msg.xid);
             break;
         case 'gift':
-            let stable = false;
+            stable = false;
             for (let event of EVENTS) {
                 if (KKuTu.isEventGoing(event) &&
                     event.hasOwnProperty("EVENT_ITEMPIECE") && event.EVENT_ITEMPIECE.ENABLE_GIFT &&
