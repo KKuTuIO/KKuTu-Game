@@ -718,6 +718,7 @@ function joinNewUser($c) {
             id: e.EVENT_ID,
             name: e.EVENT_NAME,
             description: e.EVENT_DESCRIPTION,
+            placeholder: e.EVENT_PLACEHOLDER,
             link: e.EVENT_LINK,
             type: {
                 wordpiece: e.hasOwnProperty("EVENT_WORDPIECE"),

@@ -7,6 +7,7 @@
 
     "EVENT_NAME": "EXAMPLE_EVENT1",
     "EVENT_DESCRIPTION": "EXAMPLE EVENT FOR MULTIPLE EVENT TEST",
+    "EVENT_PLACEHOLDER": "PLACEHOLDER",
     "EVENT_LINK": "https://youtu.be/dQw4w9WgXcQ",
 
     "EVENT_ID": "",
@@ -42,6 +43,7 @@
 
     "EVENT_NAME": "EXAMPLE_EVENT2",
     "EVENT_DESCRIPTION": "<h2>HTML Tag Supported!</h2>",
+    "EVENT_PLACEHOLDER": "PLACEHOLDER",
     "EVENT_LINK": "https://youtu.be/dQw4w9WgXcQ",
 
     "EVENT_POINT": {
@@ -121,6 +123,7 @@
 
     "EVENT_NAME": "EXAMPLE_EVENT3",
     "EVENT_DESCRIPTION": "<iframe width=\"560\" height=\"315\" src=\"https://www.youtube.com/embed/dQw4w9WgXcQ?controls=0\" title=\"YouTube video player\" frameborder=\"0\" allow=\"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share\" allowfullscreen></iframe>",
+    "EVENT_PLACEHOLDER": "PLACEHOLDER",
     "EVENT_LINK": "https://youtu.be/dQw4w9WgXcQ",
 
     "EVENT_SUPPORT": {
