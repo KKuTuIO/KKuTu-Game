@@ -1185,7 +1185,7 @@ export class Client {
         }
 
         if (target.buyLimit !== 0) {
-            bought[target.id] += 1;
+            bought[target.id] = (bought[target.id] || 0) + 1;
             this.setFlag("bought", bought);
         }
 
