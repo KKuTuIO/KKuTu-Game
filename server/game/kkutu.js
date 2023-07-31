@@ -1140,8 +1140,9 @@ export class Client {
         // }
         const i = EVENTS.findIndex(event => event.id == eid);
         const event = EVENTS[i];
-        const j = event.EVENT_ITEMPIECE.EXCHANGE.findIndex(data => data.id == xid);
-        const target = event.EVENT_ITEMPIECE.EXCHANGE[j];
+        const o = Object.values(event.EVENT_ITEMPIECE.EXCHANGE);
+        const j = o.findIndex(data => data.id == xid);
+        const target = o[j];
         let bought = this.getFlag("bought");
         let k;
 
