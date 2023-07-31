@@ -1064,7 +1064,7 @@ function processClientRequest($c, msg) {
             });
             break;
         case 'exchange':
-            $c.exchange(msg.eid, msg.xid);
+            $c.exchange(msg.eid, msg.id);
             break;
         case 'gift':
             stable = false;
