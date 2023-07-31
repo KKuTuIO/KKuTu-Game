@@ -1142,6 +1142,8 @@ export class Client {
         const event = EVENTS[i];
         const o = Object.values(event.EVENT_ITEMPIECE.EXCHANGE);
         const j = o.findIndex(data => data.id == xid);
+        if(j === -1) return this.sendError(400);
+
         const target = o[j];
         let bought = this.getFlag("bought");
         let k;
