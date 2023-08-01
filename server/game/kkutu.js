@@ -1138,7 +1138,7 @@ export class Client {
         // if (!isEventGoing()) {
         //     if (!this.admin || !EVENT_FORCE_FOR_ADMIN) return this.sendError(400);
         // }
-        const i = EVENTS.findIndex(event => event.id == eid);
+        const i = EVENTS.findIndex(event => event.EVENT_ID == eid);
         const event = EVENTS[i];
         const o = Object.values(event.EVENT_ITEMPIECE.EXCHANGE);
         const j = o.findIndex(data => data.id == xid);
