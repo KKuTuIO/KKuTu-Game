@@ -822,7 +822,7 @@ KKuTu.onClientMessage(function ($c, msg) {
                 } else {
                     IOLog.warn(`${$c.socket._socket.remoteAddress} 아이피에서 CAPTCHA 인증에 실패했습니다.`);
 
-                    $c.sendError(447);
+                    $c.sendError(448);
                     $c.socket.close();
                 }
             });
