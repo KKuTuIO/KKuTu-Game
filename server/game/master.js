@@ -24,7 +24,7 @@ import * as KKuTu from './kkutu.js';
 import { decrypt } from "../sub/crypto.js";
 import { reloads, DISCORD_WEBHOOK, GAME_TYPE, IS_WS_SECURED, WEB_KEY, CRYPTO_KEY,
     ADMIN, CAPTCHA_TO_GUEST, CAPTCHA_SITE_KEY,
-    TEST_PORT, KKUTU_MAX, TESTER, CAPTCHA_TO_USER, EVENTS } from "../config.js";
+    TEST_PORT, KKUTU_MAX, TESTER, CAPTCHA_TO_USER, EVENTS, EXCHANGEABLES } from "../config.js";
 import * as IOLog from '../sub/KKuTuIOLog.js';
 import Secure from '../sub/secure.js';
 import { verifyCaptcha } from '../sub/captcha.js';
@@ -1057,10 +1057,8 @@ function processClientRequest($c, msg) {
             else $c.equipItem(item, msg.slot);
             break;
         case 'getExchanges':
-            let event = EVENTS[EVENTS.findIndex(v => v.EVENT_ID == msg.id)];
             $c.send('exchangeData', {
-                id: msg.id,
-                exchange: event.EVENT_ITEMPIECE.EXCHANGE
+                exchange: EXCHANGEABLES
             });
             break;
         case 'exchange':

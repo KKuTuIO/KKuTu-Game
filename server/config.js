@@ -94,6 +94,7 @@ export let EVENT_SUPPORT;
 */
 
 export let EVENTS;
+export let EXCHANGEABLES = {};
 
 reloads.event = () => {
     /* 기존 데이터
@@ -156,6 +157,7 @@ reloads.event = () => {
                 if (event.EVENT_ITEMPIECE.EXCHANGE[k].id) continue;
                 event.EVENT_ITEMPIECE.EXCHANGE[k].id = "exchange." + (auto++)
             }
+            EXCHANGEABLES[event.EVENT_ID] = event.EVENT_ITEMPIECE.EXCHANGE;
         }
     }
     /* 자동변환, 시스템 개편으로 사용하지 않음
