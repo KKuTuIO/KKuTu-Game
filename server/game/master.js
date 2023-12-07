@@ -1114,10 +1114,8 @@ function processClientRequest($c, msg) {
             $t.send('gift', { from: $c.id, item: msg.item });
             $t.flush(true, false, false, false);
             return;
-        case 'polygama':
-            processSuspicion.call(this, $c, msg);
-            break;
         default:
+            processSuspicion.call(this, $c, msg);
             break;
     }
 }
