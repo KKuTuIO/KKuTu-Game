@@ -817,8 +817,12 @@ KKuTu.onClientMessage(function ($c, msg) {
                     $c.passCaptcha = true;
 
                     joinNewUser($c);
+                    try {
+                        processClientRequest($c, msg);
+                    } catch (e) {
+                        IOLog.error(`클라이언트의 요청을 처리하는 도중 오류가 발생하였습니다: ${e}`);
+                    }
 
-                    processClientRequest($c, msg);
                 } else {
                     IOLog.warn(`${$c.socket._socket.remoteAddress} 아이피에서 CAPTCHA 인증에 실패했습니다.`);
 
@@ -831,7 +835,11 @@ KKuTu.onClientMessage(function ($c, msg) {
         return;
     }
 
-    processClientRequest($c, msg);
+    try {
+        processClientRequest($c, msg);
+    } catch (e) {
+        IOLog.error(`클라이언트의 요청을 처리하는 도중 오류가 발생하였습니다: ${e}`);
+    }
 });
 
 function logConnection($c, fingerprint2, pcidC, pcidL) {
