@@ -945,32 +945,35 @@ function processClientRequest($c, msg) {
             break;
         case 'report':
             // IOLog.info("[DEBUG] Got Response: REPORT");
-            if (!msg.id || !msg.reason || !msg.token) return;
+            if (!msg.id || !msg.reason) return;
             if (!GUEST_PERMISSION.report) if ($c.guest) return;
+            try {
+                verifyCaptcha(msg.token, $c.socket._socket.remoteAddress, function (success) {
+                    if (success) {
+                        const embed = new MessageBuilder()
+                            .setTitle('사용자 신고')
+                            .setDescription('게임 내에서 유저 신고가 접수되었습니다.')
+                            .setColor(14423100)
+                            .addField('제보자 ID', $c.id, false)
+                            .addField('대상 ID', msg.id, false)
+                            .addField('사유', msg.reason, false)
+                            .setTimestamp();
 
-            verifyCaptcha(msg.token, $c.socket._socket.remoteAddress, function (success) {
-                if (success) {
-                    const embed = new MessageBuilder()
-                        .setTitle('사용자 신고')
-                        .setDescription('게임 내에서 유저 신고가 접수되었습니다.')
-                        .setColor(14423100)
-                        .addField('제보자 ID', $c.id, false)
-                        .addField('대상 ID', msg.id, false)
-                        .addField('사유', msg.reason, false)
-                        .setTimestamp();
-
-                    reportDiscordWebHook.send(embed).then(() => {
-                        $c.send('notice', {value: "신고가 정상적으로 접수되었습니다."});
-                        IOLog.notice(`${$c.profile.title}(${$c.id}) 님이 ${msg.id} 님을 "${msg.reason}" 사유로 신고했습니다.`);
-                    }).catch(err => {
-                        IOLog.error(`신고 내용을 디스코드 웹훅으로 전송하는 중 오류가 발생했습니다. ${err.message}`);
-                    });
-                } else {
-                    IOLog.warn(`[REPORT] ${$c.socket._socket.remoteAddress} Failed CAPTCHA Verification`);
-                    $c.sendError(400);
-                    return;
-                }
-            });
+                        reportDiscordWebHook.send(embed).then(() => {
+                            $c.send('notice', {value: "신고가 정상적으로 접수되었습니다."});
+                            IOLog.notice(`${$c.profile.title}(${$c.id}) 님이 ${msg.id} 님을 "${msg.reason}" 사유로 신고했습니다.`);
+                        }).catch(err => {
+                            IOLog.error(`신고 내용을 디스코드 웹훅으로 전송하는 중 오류가 발생했습니다. ${err.message}`);
+                        });
+                    } else {
+                        IOLog.warn(`[REPORT] ${$c.socket._socket.remoteAddress} Failed CAPTCHA Verification`);
+                        $c.sendError(400);
+                        return;
+                    }
+                });
+            } catch (e) {
+                IOLog.error(`신고 내용을 처리하는 중 오류가 발생했습니다. ${e}`);
+            }
             break;
         case 'enter':
         case 'setRoom':
