@@ -751,17 +751,19 @@ export class Client {
                             this.flags = $user.flags || {};
 
                             if (first) {
+                                const uid = nanoid(UID_ALPHABET, UID_LETTER);
                                 this.setFlag()
                                 this.setFlag("flagSystem", 2);
                                 this.setFlag("bought", {});
-                                this.setFlag("uid", nanoid(UID_ALPHABET, UID_LETTER), true);
+                                this.setFlag("uid", uid, true);
                                 this.setFlag("equipMigrate", 3);
                                 this.flush(false, false, false, true);
                             } else {
                                 if (!this.getFlag("flagSystem")) this.migrateFlags();
                                 if (!this.getFlag("bought")) this.setFlag("bought", {});
                                 if (!this.getFlag("uid")) {
-                                    this.setFlag("uid", nanoid(UID_ALPHABET, UID_LETTER), true);
+                                    const uid = nanoid(UID_ALPHABET, UID_LETTER);
+                                    this.setFlag("uid", uid, true);
                                     this.flush(false, false, false, true);
                                 }
                                 this.checkExpire();
