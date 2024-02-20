@@ -20,7 +20,7 @@ let GUEST_PERMISSION;
 import * as Cluster from "cluster";
 import { Tail, all as LizardAll } from '../sub/lizard.js';
 import * as IOLog from '../sub/KKuTuIOLog.js';
-import { nanoid } from 'nanoid';
+import { customAlphabet as nanoid } from 'nanoid';
 import { init as ACInit, canRandomized,
     randomizePacket } from '../sub/utils/AntiCheat.js';
 import { resetDaily, rewardRating, getRatingLevel } from '../sub/utils/UserRating.js';

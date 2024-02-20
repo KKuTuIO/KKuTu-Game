@@ -22,7 +22,7 @@ let HTTPS_Server;
 // import { writeSnapshot }from "heapdump";
 import * as KKuTu from './kkutu.js';
 import { decrypt } from "../sub/crypto.js";
-import { nanoid } from 'nanoid';
+import { customAlphabet as nanoid } from 'nanoid';
 import { UID_ALPHABET, UID_LETTER, reloads, DISCORD_WEBHOOK, GAME_TYPE, IS_WS_SECURED, WEB_KEY, CRYPTO_KEY,
     ADMIN, CAPTCHA_TO_GUEST, CAPTCHA_SITE_KEY,
     TEST_PORT, KKUTU_MAX, TESTER, CAPTCHA_TO_USER, EVENTS, EXCHANGEABLES } from "../config.js";
