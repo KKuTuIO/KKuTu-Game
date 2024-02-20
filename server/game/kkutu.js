@@ -20,7 +20,6 @@ let GUEST_PERMISSION;
 import * as Cluster from "cluster";
 import { Tail, all as LizardAll } from '../sub/lizard.js';
 import * as IOLog from '../sub/KKuTuIOLog.js';
-import { customAlphabet as nanoid } from 'nanoid';
 import { init as ACInit, canRandomized,
     randomizePacket } from '../sub/utils/AntiCheat.js';
 import { resetDaily, rewardRating, getRatingLevel } from '../sub/utils/UserRating.js';
@@ -28,7 +27,9 @@ import { UID_ALPHABET, UID_LETTER, RULE, GAME_TYPE, CHAT_SPAM_ADD_DELAY, CHAT_SP
     CHAT_SPAM_LIMIT, CHAT_BLOCKED_LENGTH, CHAT_KICK_BY_SPAM, SPAM_ADD_DELAY,
     SPAM_CLEAR_DELAY, SPAM_LIMIT, BLOCKED_LENGTH, KICK_BY_SPAM,
     EQUIP_SLOTS, EQUIP_GROUP, MAX_OBSERVER, OPTIONS, IJP,
-    IJP_EXCEPT, EVENTS } from "../config.js"
+    IJP_EXCEPT, EVENTS } from "../config.js";
+import { customAlphabet } from 'nanoid';
+const nanoid = customAlphabet(UID_ALPHABET, UID_LETTER);
 import kkutuLevel from "../sub/KKuTuLevel.js";
 let DB;
 let DIC;
@@ -751,19 +752,18 @@ export class Client {
                             this.flags = $user.flags || {};
 
                             if (first) {
-                                const uid = nanoid(UID_ALPHABET, UID_LETTER);
                                 this.setFlag()
                                 this.setFlag("flagSystem", 2);
                                 this.setFlag("bought", {});
-                                this.setFlag("uid", uid, true);
+                                this.setFlag("uid", nanoid(), true);
                                 this.setFlag("equipMigrate", 3);
                                 this.flush(false, false, false, true);
                             } else {
                                 if (!this.getFlag("flagSystem")) this.migrateFlags();
                                 if (!this.getFlag("bought")) this.setFlag("bought", {});
                                 if (!this.getFlag("uid")) {
-                                    const uid = nanoid(UID_ALPHABET, UID_LETTER);
-                                    this.setFlag("uid", uid, true);
+
+                                    this.setFlag("uid", nanoid(), true);
                                     this.flush(false, false, false, true);
                                 }
                                 this.checkExpire();

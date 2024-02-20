@@ -22,10 +22,11 @@ let HTTPS_Server;
 // import { writeSnapshot }from "heapdump";
 import * as KKuTu from './kkutu.js';
 import { decrypt } from "../sub/crypto.js";
-import { customAlphabet as nanoid } from 'nanoid';
 import { UID_ALPHABET, UID_LETTER, reloads, DISCORD_WEBHOOK, GAME_TYPE, IS_WS_SECURED, WEB_KEY, CRYPTO_KEY,
     ADMIN, CAPTCHA_TO_GUEST, CAPTCHA_SITE_KEY,
     TEST_PORT, KKUTU_MAX, TESTER, CAPTCHA_TO_USER, EVENTS, EXCHANGEABLES } from "../config.js";
+import { customAlphabet } from 'nanoid';
+const nanoid = customAlphabet(UID_ALPHABET, UID_LETTER);
 import * as IOLog from '../sub/KKuTuIOLog.js';
 import Secure from '../sub/secure.js';
 import { verifyCaptcha } from '../sub/captcha.js';
@@ -1124,8 +1125,7 @@ function processClientRequest($c, msg) {
             if ($c.guest) return $c.sendError(464);
             if (($c.getFlagTime("uid") + 1800) > Math.floor(new Date() / 1000))
                 return $c.sendError(465);
-            const newUid = nanoid(UID_ALPHABET, UID_LETTER);
-            $c.setFlag("uid", newUid, true);
+            $c.setFlag("uid", nanoid(), true);
             $c.send('newUid', $c.getFlag("uid"));
             break;
         case 'wms':
