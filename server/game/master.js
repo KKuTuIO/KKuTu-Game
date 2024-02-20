@@ -1119,14 +1119,16 @@ function processClientRequest($c, msg) {
             break;
         case 'uid':
             if ($c.guest) return $c.sendError(464);
-            $c.send('uid', $c.getFlag("uid"));
+            const uid = $c.getFlag("uid");
+            $c.send('uid', uid);
             break;
         case 'newUid':
             if ($c.guest) return $c.sendError(464);
             if (($c.getFlagTime("uid") + 1800) > Math.floor(new Date() / 1000))
                 return $c.sendError(465);
             $c.setFlag("uid", nanoid(), true);
-            $c.send('newUid', $c.getFlag("uid"));
+            const newUid = $c.getFlag("uid");
+            $c.send('newUid', newUid);
             break;
         case 'wms':
             processSuspicion.call(this, $c, msg);
