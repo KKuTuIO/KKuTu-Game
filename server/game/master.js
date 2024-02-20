@@ -1126,6 +1126,7 @@ function processClientRequest($c, msg) {
             if (($c.getFlagTime("uid") + 1800) > Math.floor(new Date() / 1000))
                 return $c.sendError(465);
             $c.setFlag("uid", nanoid(), true);
+            $c.flush(false, false, false, true);
             $c.send('newUid', { value: $c.getFlag("uid") });
             break;
         case 'wms':
