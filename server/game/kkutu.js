@@ -20,16 +20,16 @@ let GUEST_PERMISSION;
 import * as Cluster from "cluster";
 import { Tail, all as LizardAll } from '../sub/lizard.js';
 import * as IOLog from '../sub/KKuTuIOLog.js';
+import { nanoid } from 'nanoid';
 import { init as ACInit, canRandomized,
     randomizePacket } from '../sub/utils/AntiCheat.js';
 import { resetDaily, rewardRating, getRatingLevel } from '../sub/utils/UserRating.js';
-import { RULE, GAME_TYPE, CHAT_SPAM_ADD_DELAY, CHAT_SPAM_CLEAR_DELAY,
+import { UID_ALPHABET, UID_LETTER, RULE, GAME_TYPE, CHAT_SPAM_ADD_DELAY, CHAT_SPAM_CLEAR_DELAY,
     CHAT_SPAM_LIMIT, CHAT_BLOCKED_LENGTH, CHAT_KICK_BY_SPAM, SPAM_ADD_DELAY,
     SPAM_CLEAR_DELAY, SPAM_LIMIT, BLOCKED_LENGTH, KICK_BY_SPAM,
     EQUIP_SLOTS, EQUIP_GROUP, MAX_OBSERVER, OPTIONS, IJP,
     IJP_EXCEPT, EVENTS } from "../config.js"
 import kkutuLevel from "../sub/KKuTuLevel.js";
-// 망할 셧다운제 import * as Ajae from "../sub/ajae.js";
 let DB;
 let DIC;
 let ROOM;
@@ -751,13 +751,19 @@ export class Client {
                             this.flags = $user.flags || {};
 
                             if (first) {
+                                this.setFlag()
                                 this.setFlag("flagSystem", 2);
-                                this.setFlag("equipMigrate", 3);
                                 this.setFlag("bought", {});
+                                this.setFlag("uid", nanoid(UID_ALPHABET, UID_LETTER), true);
+                                this.setFlag("equipMigrate", 3);
                                 this.flush(false, false, false, true);
                             } else {
                                 if (!this.getFlag("flagSystem")) this.migrateFlags();
                                 if (!this.getFlag("bought")) this.setFlag("bought", {});
+                                if (!this.getFlag("uid")) {
+                                    this.setFlag("uid", nanoid(UID_ALPHABET, UID_LETTER), true);
+                                    this.flush(false, false, false, true);
+                                }
                                 this.checkExpire();
                                 this.okgCount = Math.floor((this.data.playTime || 0) / PER_OKG);
                                 if (this.okgCount > MAX_OKG) this.okgCount = MAX_OKG;

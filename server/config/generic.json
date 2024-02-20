@@ -20,5 +20,7 @@
     "Mback": ["Mback"],
     "BDG": ["BDG1", "BDG2", "BDG3", "BDG4"],
     "NIK": ["NIK"]
-  }
+  },
+  "UID_ALPHABET": "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz-",
+  "UID_LETTER": 24
 }

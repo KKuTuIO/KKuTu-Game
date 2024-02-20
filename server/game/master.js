@@ -22,7 +22,8 @@ let HTTPS_Server;
 // import { writeSnapshot }from "heapdump";
 import * as KKuTu from './kkutu.js';
 import { decrypt } from "../sub/crypto.js";
-import { reloads, DISCORD_WEBHOOK, GAME_TYPE, IS_WS_SECURED, WEB_KEY, CRYPTO_KEY,
+import { nanoid } from 'nanoid';
+import { UID_ALPHABET, UID_LETTER, reloads, DISCORD_WEBHOOK, GAME_TYPE, IS_WS_SECURED, WEB_KEY, CRYPTO_KEY,
     ADMIN, CAPTCHA_TO_GUEST, CAPTCHA_SITE_KEY,
     TEST_PORT, KKUTU_MAX, TESTER, CAPTCHA_TO_USER, EVENTS, EXCHANGEABLES } from "../config.js";
 import * as IOLog from '../sub/KKuTuIOLog.js';
@@ -1114,7 +1115,19 @@ function processClientRequest($c, msg) {
             $t.send('obtain', { box: $c.box });
             $t.send('gift', { from: $c.id, item: msg.item });
             $t.flush(true, false, false, false);
-            return;
+            break;
+        case 'uid':
+            if ($c.guest) return $c.sendError(464);
+            $c.send('uid', $c.getFlag("uid"));
+            break;
+        case 'newUid':
+            if ($c.guest) return $c.sendError(464);
+            if (($c.getFlagTime("uid") + 1800) > Math.floor(new Date() / 1000))
+                return $c.sendError(465);
+            const newUid = nanoid(UID_ALPHABET, UID_LETTER);
+            $c.setFlag("uid", newUid, true);
+            $c.send('newUid', $c.getFlag("uid"));
+            break;
         case 'wms':
             processSuspicion.call(this, $c, msg);
             break;
