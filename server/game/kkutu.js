@@ -456,17 +456,11 @@ export class Client {
         }
         this.data.playTime += time;
 
-        if(this.membership) {
-            while (this.data.playTime >= PER_OKG[this.membership] * (this.okgCount + 1)) {
-                if (this.okgCount >= MAX_OKG[this.membership]) return;
-                this.okgCount++;
-            }
-        } else {
-            while (this.data.playTime >= PER_OKG[0] * (this.okgCount + 1)) {
-                if (this.okgCount >= MAX_OKG[0]) return;
-                this.okgCount++;
-            }
+        while (this.data.playTime >= PER_OKG[this.membership] * (this.okgCount + 1)) {
+            if (this.okgCount >= MAX_OKG[this.membership]) return;
+            this.okgCount++;
         }
+
         this.send('okg', {time: this.data.playTime, count: this.okgCount, membership: this.membership});
         // process.send({ type: 'okg', id: this.id, time: time });
     };
@@ -779,7 +773,7 @@ export class Client {
                                 }
                                 this.checkExpire();
                                 this.okgCount = Math.floor((this.data.playTime || 0) / PER_OKG);
-                                if (this.okgCount > MAX_OKG) this.okgCount = MAX_OKG;
+                                if (this.okgCount > MAX_OKG[this.membership]) this.okgCount = MAX_OKG[this.membership];
                             }
 
                             let eventStatus = getEventStatus();
