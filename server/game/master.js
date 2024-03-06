@@ -719,6 +719,7 @@ function joinNewUser($c) {
             status: status,
             id: e.EVENT_ID,
             name: e.EVENT_NAME,
+            bulletin: e.EVENT_BULLETIN,
             description: e.EVENT_DESCRIPTION,
             placeholder: e.EVENT_PLACEHOLDER,
             link: e.EVENT_LINK,
@@ -752,6 +753,7 @@ function joinNewUser($c) {
         admin: $c.admin,
         test: global.test,
         caj: !!$c._checkAjae,
+        membership: $c.membership,
         event: event
     });
     narrateFriends($c.id, $c.friends, "on");

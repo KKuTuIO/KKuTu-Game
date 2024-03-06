@@ -386,6 +386,7 @@ export class Client {
         this.ready = false;
         this.game = {};
         this.sid = sid;
+        this.membership = "";
         this.event = {};
         this.waitGame = false;
 
@@ -750,6 +751,7 @@ export class Client {
                             this.money = Number($user.money);
                             this.friends = $user.friends || {};
                             this.flags = $user.flags || {};
+                            this.membership = $user.membership || "";
 
                             if (first) {
                                 this.setFlag()
