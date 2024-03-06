@@ -772,7 +772,7 @@ export class Client {
                                     this.flush(false, false, false, true);
                                 }
                                 this.checkExpire();
-                                this.okgCount = Math.floor((this.data.playTime || 0) / PER_OKG);
+                                this.okgCount = Math.floor((this.data.playTime || 0) / PER_OKG[this.membership]);
                                 if (this.okgCount > MAX_OKG[this.membership]) this.okgCount = MAX_OKG[this.membership];
                             }
 
