@@ -23,6 +23,8 @@ import * as IOLog from '../sub/KKuTuIOLog.js';
 import { init as ACInit, canRandomized,
     randomizePacket } from '../sub/utils/AntiCheat.js';
 import { resetDaily, rewardRating, getRatingLevel } from '../sub/utils/UserRating.js';
+import { obtainMembershipId } from '../sub/utils/Membership.js';
+
 import { UID_ALPHABET, UID_LETTER, RULE, GAME_TYPE, CHAT_SPAM_ADD_DELAY, CHAT_SPAM_CLEAR_DELAY,
     CHAT_SPAM_LIMIT, CHAT_BLOCKED_LENGTH, CHAT_KICK_BY_SPAM, SPAM_ADD_DELAY,
     SPAM_CLEAR_DELAY, SPAM_LIMIT, BLOCKED_LENGTH, KICK_BY_SPAM,
@@ -44,8 +46,8 @@ const IS_TEST_SERVER = false // 현재 더미
 
 const NUM_SLAVES = 8;
 const GUEST_IMAGE = "https://cdn.kkutu.io/img/kkutu/guest.png";
-const MAX_OKG = 15;
-const PER_OKG = 720000;
+const MAX_OKG = [15, 17, 18, 19, 20];
+const PER_OKG = [720000, 720000, 600000, 600000, 480000];
 
 export let XPMultiplier = 1;
 export let MoneyMultiplier = 1;
@@ -386,7 +388,7 @@ export class Client {
         this.ready = false;
         this.game = {};
         this.sid = sid;
-        this.membership = "";
+        this.membership = 0;
         this.event = {};
         this.waitGame = false;
 
@@ -454,11 +456,18 @@ export class Client {
         }
         this.data.playTime += time;
 
-        while (this.data.playTime >= PER_OKG * (this.okgCount + 1)) {
-            if (this.okgCount >= MAX_OKG) return;
-            this.okgCount++;
+        if(this.membership) {
+            while (this.data.playTime >= PER_OKG[this.membership] * (this.okgCount + 1)) {
+                if (this.okgCount >= MAX_OKG[this.membership]) return;
+                this.okgCount++;
+            }
+        } else {
+            while (this.data.playTime >= PER_OKG[0] * (this.okgCount + 1)) {
+                if (this.okgCount >= MAX_OKG[0]) return;
+                this.okgCount++;
+            }
         }
-        this.send('okg', {time: this.data.playTime, count: this.okgCount});
+        this.send('okg', {time: this.data.playTime, count: this.okgCount, membership: this.membership});
         // process.send({ type: 'okg', id: this.id, time: time });
     };
 
@@ -751,7 +760,7 @@ export class Client {
                             this.money = Number($user.money);
                             this.friends = $user.friends || {};
                             this.flags = $user.flags || {};
-                            this.membership = $user.membership || "";
+                            this.membership = obtainMembershipId($user.membership);
 
                             if (first) {
                                 this.setFlag()
@@ -2117,7 +2126,7 @@ export class Room {
                 res[i].rank = Number(i);
             }
             pv = res[i].score;
-            rw = getRewards(this.mode, o.game.score / res[i].dim, o.game.bonus, res[i].rank, rl, sumScore);
+            rw = getRewards(this.mode, o.game.score / res[i].dim, o.game.bonus, res[i].rank, rl, sumScore, o.membership);
             rw.playTime = now - o.playAt;
             o.applyEquipOptions(rw); // 착용 아이템 보너스 적용
             if (rw.together) {
@@ -2495,6 +2504,12 @@ function getRewards(mode, score, bonus, rank, all, ss) {
         rw.together = true;
     }
     rw.score += bonus;
+
+    if(o.membership) {
+        let ad = 1 + (o.membership * 0.025);
+        rw.score = rw.score * ad;
+        rw.money = rw.money * ad;
+    }
 
     rw.score = rw.score || 0;
     rw.money = rw.money || 0;

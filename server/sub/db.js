@@ -77,6 +77,7 @@ export let kkutu_shop;
 export let kkutu_shop_desc;
 export let session;
 export let users;
+export let family;
 export let SUBMIT_WORD_CACHE;
 export let MANNER_CACHE;
 export let SPC_MANNER_CACHE;
@@ -112,6 +113,7 @@ function connectPg(noRedis) {
 
         session = new mainAgent.Table("session");
         users = new mainAgent.Table("users");
+        family = new mainAgent.Table("family");
 
         SUBMIT_WORD_CACHE = {'ko': {}, 'en': {}}; // 단어 캐시
         MANNER_CACHE = {'ko': {}, 'en': {}}; // 일반 매너 캐시

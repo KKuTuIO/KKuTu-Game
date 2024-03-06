@@ -605,7 +605,7 @@ export async function init (_SID, _CHAN) {
                 $c = new KKuTu.Client(socket, $body ? $body.profile : null, key);
                 $c.admin = ADMIN.indexOf($c.id) != -1;
 
-                if (!$c.admin && Object.keys(DIC).length >= KKUTU_MAX) {
+                if (!($c.admin || $c.membership >= 2) && Object.keys(DIC).length >= KKUTU_MAX) {
                     $c.sendError('full');
                     $c.socket.close();
 
