@@ -1075,7 +1075,7 @@ function processClientRequest($c, msg) {
             });
             break;
         case 'exchange':
-            $c.exchange(msg.eid, msg.id, $c.okgCount);
+            $c.exchange(msg.eid, msg.id);
             break;
         case 'gift':
             stable = false;

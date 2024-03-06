@@ -1147,7 +1147,7 @@ export class Client {
         this.flush(true, true, false, true);
     };
 
-    exchange (eid, xid, okg) {
+    exchange (eid, xid) {
         // if (!isEventGoing()) {
         //     if (!this.admin || !EVENT_FORCE_FOR_ADMIN) return this.sendError(400);
         // }
@@ -1162,7 +1162,7 @@ export class Client {
         let k;
 
         // 최소 오끄감 검증
-        if (okg < target.minimumOkg) return this.sendError(446, target.minimumOkg);
+        if (this.okgCount < target.minimumOkg) return this.sendError(446, target.minimumOkg);
 
         // 구매 제한
         if (target.buyLimit !== 0 &&
