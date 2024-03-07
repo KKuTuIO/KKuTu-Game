@@ -2420,7 +2420,7 @@ function shuffle(arr) {
     return r;
 }
 
-function getRewards(mode, score, bonus, rank, all, ss) {
+function getRewards(mode, score, bonus, rank, all, ss, membership) {
     let rw = {score: 0, money: 0};
     let sr = score / ss;
 
@@ -2502,8 +2502,8 @@ function getRewards(mode, score, bonus, rank, all, ss) {
     }
     rw.score += bonus;
 
-    if(o.membership) {
-        let ad = 1 + (o.membership * 0.025);
+    if(membership) {
+        let ad = 1 + (membership * 0.025);
         rw.score = rw.score * ad;
         rw.money = rw.money * ad;
     }
