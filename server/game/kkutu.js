@@ -775,9 +775,12 @@ export class Client {
                                 this.okgCount = Math.floor((this.data.playTime || 0) / PER_OKG[this.membership]);
                                 if (this.okgCount > MAX_OKG[this.membership]) this.okgCount = MAX_OKG[this.membership];
                             }
-                            obtainMembershipGoods(this, this.membership);
+
+
                             let eventStatus = getEventStatus();
                             let itemFlush = false;
+                            if (obtainMembershipGoods(this, this.membership)) itemFlush = true;
+
                             for (let i in EVENTS) {
                                 let event = EVENTS[i];
                                 let status = eventStatus[i];
