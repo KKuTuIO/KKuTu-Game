@@ -23,7 +23,7 @@ import * as IOLog from '../sub/KKuTuIOLog.js';
 import { init as ACInit, canRandomized,
     randomizePacket } from '../sub/utils/AntiCheat.js';
 import { resetDaily, rewardRating, getRatingLevel } from '../sub/utils/UserRating.js';
-import { obtainMembershipId } from '../sub/utils/Membership.js';
+import { obtainMembershipId, obtainMembershipGoods } from '../sub/utils/Membership.js';
 
 import { UID_ALPHABET, UID_LETTER, RULE, GAME_TYPE, CHAT_SPAM_ADD_DELAY, CHAT_SPAM_CLEAR_DELAY,
     CHAT_SPAM_LIMIT, CHAT_BLOCKED_LENGTH, CHAT_KICK_BY_SPAM, SPAM_ADD_DELAY,
@@ -461,7 +461,7 @@ export class Client {
             this.okgCount++;
         }
 
-        this.send('okg', {time: this.data.playTime, count: this.okgCount, membership: this.membership});
+        this.send('okg', {time: this.data.playTime, count: this.okgCount});
         // process.send({ type: 'okg', id: this.id, time: time });
     };
 
@@ -774,6 +774,7 @@ export class Client {
                                 this.checkExpire();
                                 this.okgCount = Math.floor((this.data.playTime || 0) / PER_OKG[this.membership]);
                                 if (this.okgCount > MAX_OKG[this.membership]) this.okgCount = MAX_OKG[this.membership];
+                                obtainMembershipGoods(this.membership);
                             }
 
                             let eventStatus = getEventStatus();
