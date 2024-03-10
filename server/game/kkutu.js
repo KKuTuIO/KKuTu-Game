@@ -762,7 +762,7 @@ export class Client {
                                 "item": false,
                                 "equip": false,
                                 "friends": false,
-                                "flags": false
+                                "flags": true
                             };
 
                             if (obtainMembershipItems(this, this.membership)) isFlush["item"] = true;
@@ -773,8 +773,7 @@ export class Client {
                                 this.setFlag("bought", {});
                                 this.setFlag("uid", nanoid(), true);
                                 this.setFlag("equipMigrate", 3);
-
-                                isFlush["flags"] = true;
+                                this.flush(false, false, false, true);
                             } else {
                                 if (!this.getFlag("flagSystem")) this.migrateFlags();
                                 if (!this.getFlag("bought")) this.setFlag("bought", {});
