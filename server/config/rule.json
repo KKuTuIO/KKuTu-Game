@@ -26,7 +26,7 @@
     "itm": { "name": "Item" },
     "etq": { "name": "Etiquette" },
     "gnt": { "name": "Gentle" },
-    "apm": { "name": "Apmal "}
+    "apm": { "name": "Apmal" }
   },
   "RULE": {
     "EKT": {

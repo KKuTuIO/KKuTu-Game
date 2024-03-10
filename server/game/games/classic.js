@@ -231,12 +231,25 @@ export function turnEnd () {
         }
         target.game.score += score;
     }
+    /**
+     * TODO: 공격 성공 시 점수 보너스
+     * 바로 전 사람은 공격 성공 시
+
+    else {
+        let mannerBonus = (10 - getManner.call(my, my.game.char, my.game.subChar));
+        if(mannerBonus < 0) mannerBonus = 0;
+
+        score = mannerBonus * 10;
+    }
+     **/
+
     my.byMaster('turnEnd', {
         ok: false,
         target: target ? target.id : null,
         score: score,
         hint: getRandom(WL)
     }, true);
+
     my.game._rrt = setTimeout(runAs, 3000, my, my.roundReady);
     clearTimeout(my.game.robotTimer);
 }

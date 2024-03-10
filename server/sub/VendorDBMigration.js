@@ -21,7 +21,7 @@ export function processVendorMigration(userId, callback) {
                 });
             });
         } else {
-            // TODO: 친구 목록 수정 이전에 마이그레이션된 계정을 위한 임시 조취이므로, 향후 제거 필요
+            // TODO: 친구 목록 수정 이전에 마이그레이션된 계정을 위한 임시 조치이므로, 향후 제거 필요
             modifyFriendsUserId(oldUserId, userId, function () {
                 if (callback !== undefined) {
                     callback();

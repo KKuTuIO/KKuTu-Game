@@ -31,10 +31,11 @@ import * as IOLog from '../sub/KKuTuIOLog.js';
 import Secure from '../sub/secure.js';
 import { verifyCaptcha } from '../sub/captcha.js';
 import { requestLastRelay, waitACinit, processSuspicion, rebuildWebHook } from '../sub/utils/AntiCheat.js';
-import { initUserRating } from '../sub/utils/UserRating.js';
+import { getRatingLevel, initUserRating } from '../sub/utils/UserRating.js';
 import { processUserNickChange } from "../sub/UserNickChange.js";
 import geoIp from 'geoip-country';
 import { Webhook, MessageBuilder } from 'discord-webhook-node';
+import getLevel from "../sub/KKuTuLevel.js";
 const reportDiscordWebHook = new Webhook(DISCORD_WEBHOOK.REPORT);
 
 let MainDB;
@@ -592,9 +593,9 @@ export async function init (_SID, _CHAN) {
             if (isWebServer) {
                 if (WDIC[key]) WDIC[key].socket.close();
                 WDIC[key] = new KKuTu.WebServer(socket);
-                IOLog.notice(`새로운 웹서버와 연결되었습니다. #${key}`);
+                IOLog.notice(`새로운 웹 서버와 연결되었습니다. #${key}`);
                 WDIC[key].socket.on('close', function () {
-                    IOLog.notice(`웹서버와 연결이 끊겼습니다. #${key}`);
+                    IOLog.notice(`웹 서버와의 연결이 끊어졌습니다. #${key}`);
                     WDIC[key].socket.removeAllListeners();
                     delete WDIC[key];
                 });
@@ -994,7 +995,7 @@ function processClientRequest($c, msg) {
             if (stable) {
                 if (msg.title.length > 24) stable = false;
                 if (msg.password.length > 32) stable = false;
-                if (!$c.admin && (msg.limit < 2 || msg.limit > 8)) {
+                if (!$c.admin && (msg.limit < 2 || msg.limit > ($c.perks["maximumPlayers"] || 8))) {
                     msg.code = 432;
                     stable = false;
                 }
@@ -1003,18 +1004,18 @@ function processClientRequest($c, msg) {
                     msg.code = 433;
                     stable = false;
                 }
-                if ((msg.opts.noguest || msg.opts.onlybeginner || msg.opts.etiquette) && $c.guest) {
+                if ($c.guest && (msg.opts.noguest || msg.opts.onlybeginner || msg.opts.etiquette)) {
                     msg.code = 434;
                     stable = false;
                 }
-                /*
-                TODO: 초보 특수규칙 50레벨 미만 설정 제한
-                TODO: 에티켓 특수규칙 평점 매우 낮음 설정 제한
-                if (msg.opts.onlybeginner && ) {
+                if (msg.opts.onlybeginner && (getLevel() >= 50)) {
                     msg.code = 434;
                     stable = false;
                 }
-                */
+                if (msg.opts.etiquette && getRatingLevel($c) < 1) {
+                    msg.code = 704;
+                    stable = false;
+                }
                 // if (ENABLE_ROUND_TIME.indexOf(msg.time) == -1) stable = false;
                 if (msg.time < 10 || msg.time > 150) {
                     stable = false;

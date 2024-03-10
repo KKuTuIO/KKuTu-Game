@@ -426,3 +426,29 @@ export function getPreScore (text, chainArr, tr) {
 export function getPenalty (chain, score) {
     return -1 * Math.round(Math.min(10 + (chain || []).length * 2.1 + score * 0.15, score));
 }
+
+/**
+ * TODO: 공격 성공 시 점수 보너스
+ * @penaltyScore number 패널티 점수
+ * @pos number 플레이어의 위치 (i.e: 패널티 대상 직전 플레이어 = -1)
+ */
+export function getBonus (penaltyScore, pos) {
+    let rawPenaltyScore = penaltyScore * -1;
+
+    switch(pos) {
+        case -1: // 바로 전 플레이어
+            return Math.round(rawPenaltyScore * 0.306);
+        case -2:
+            return Math.round(rawPenaltyScore * 0.216);
+        case -3:
+            return Math.round(rawPenaltyScore * 0.108);
+        case -4:
+            return Math.round(rawPenaltyScore * 0.072);
+        case -5:
+            return Math.round(rawPenaltyScore * 0.045);
+        case -6:
+            return Math.round(rawPenaltyScore * 0.018);
+        default:
+            return 0;
+    }
+}

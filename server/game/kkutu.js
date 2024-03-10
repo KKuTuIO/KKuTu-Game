@@ -23,7 +23,7 @@ import * as IOLog from '../sub/KKuTuIOLog.js';
 import { init as ACInit, canRandomized,
     randomizePacket } from '../sub/utils/AntiCheat.js';
 import { resetDaily, rewardRating, getRatingLevel } from '../sub/utils/UserRating.js';
-import { obtainMembershipId, obtainMembershipGoods } from '../sub/utils/Membership.js';
+import { obtainMembershipId, obtainMembershipItems, obtainMembershipPerks } from '../sub/utils/Membership.js';
 
 import { UID_ALPHABET, UID_LETTER, RULE, GAME_TYPE, CHAT_SPAM_ADD_DELAY, CHAT_SPAM_CLEAR_DELAY,
     CHAT_SPAM_LIMIT, CHAT_BLOCKED_LENGTH, CHAT_KICK_BY_SPAM, SPAM_ADD_DELAY,
@@ -31,7 +31,6 @@ import { UID_ALPHABET, UID_LETTER, RULE, GAME_TYPE, CHAT_SPAM_ADD_DELAY, CHAT_SP
     EQUIP_SLOTS, EQUIP_GROUP, MAX_OBSERVER, OPTIONS, IJP,
     IJP_EXCEPT, EVENTS } from "../config.js";
 import { customAlphabet } from 'nanoid';
-const nanoid = customAlphabet(UID_ALPHABET, UID_LETTER);
 import kkutuLevel from "../sub/KKuTuLevel.js";
 let DB;
 let DIC;
@@ -48,6 +47,7 @@ const NUM_SLAVES = 8;
 const GUEST_IMAGE = "https://cdn.kkutu.io/img/kkutu/guest.png";
 const MAX_OKG = [15, 17, 18, 19, 20];
 const PER_OKG = [720000, 720000, 600000, 600000, 480000];
+const nanoid = customAlphabet(UID_ALPHABET, UID_LETTER);
 
 export let XPMultiplier = 1;
 export let MoneyMultiplier = 1;
@@ -286,11 +286,11 @@ export class WebServer {
     };
 
     onWebServerMessage (msg) {
-        IOLog.info(`웹서버에서 메시지가 전달되었습니다. : ${msg}`)
+        IOLog.info(`웹 서버에서 메시지가 전달되었습니다. : ${msg}`)
         try {
             msg = JSON.parse(msg);
         } catch (e) {
-            IOLog.error(`웹서버 메시지 파싱에 실패했습니다. : ${e}`);
+            IOLog.error(`웹 서버 메시지 해석에 실패했습니다. : ${e}`);
             return;
         }
 
@@ -306,17 +306,17 @@ export class WebServer {
                 const ip = msg.hasOwnProperty('ip') ? msg.ip : '';
 
                 if (userId.length > 0) {
-                    IOLog.notice(`${userId} 아이디의 유저를 추방합니다.`)
+                    IOLog.notice(`사용자 ${userId}을(를) 추방합니다.`)
 
                     if (DIC.hasOwnProperty(userId)) {
                         const player = DIC[userId];
                         player.sendError(410);
                         player.socket.close();
 
-                        IOLog.notice(`${player.profile.title}(${player.id}) 유저를 추방했습니다.`)
+                        IOLog.notice(`사용자 ${player.profile.title}(${player.id})을(를) 추방했습니다.`)
                     }
                 } else if (ip.length > 0) {
-                    IOLog.notice(`${ip} 아이피의 유저를 추방합니다.`)
+                    IOLog.notice(`IP 주소 ${ip}을(를) 추방합니다.`)
                     for (let userId in DIC) {
                         if (!DIC.hasOwnProperty(userId)) continue;
                         const player = DIC[userId];
@@ -326,7 +326,7 @@ export class WebServer {
                             player.sendError(410);
                             player.socket.close();
 
-                            IOLog.notice(`${player.profile.title}(${player.id}) 유저를 추방했습니다.`)
+                            IOLog.notice(`사용자 ${player.profile.title}(${player.id})을(를) 추방했습니다.`)
                         }
                     }
                 }
@@ -336,13 +336,13 @@ export class WebServer {
                     IOLog.warn('API가 호출되었지만, 공지 내용이 전달되지 않았습니다. 공지를 전송하지 않습니다.');
                     break;
                 }
-                IOLog.notice(`API를 통해 공지가 전송되었습니다. 내용 : ${msg.value}`)
+                IOLog.notice(`API를 통해 공지가 전송되었습니다. 내용: ${msg.value}`)
                 for (let i in DIC) {
                     DIC[i].send('yell', {value: msg.value});
                 }
                 break;
             default:
-                IOLog.warn(`웹서버에서 전송된 메시지를 처리 할 수 없습니다. : ${msg.type}`);
+                IOLog.warn(`웹 서버에서 전송된 메시지를 처리할 수 없습니다: ${msg.type}`);
                 break;
         }
     };
@@ -389,6 +389,7 @@ export class Client {
         this.game = {};
         this.sid = sid;
         this.membership = 0;
+        this.perks = obtainMembershipPerks(this.membership);
         this.event = {};
         this.waitGame = false;
 
@@ -755,6 +756,16 @@ export class Client {
                             this.friends = $user.friends || {};
                             this.flags = $user.flags || {};
                             this.membership = obtainMembershipId($user.membership);
+                            this.perks = obtainMembershipPerks(this.membership);
+
+                            let isFlush = {
+                                "item": false,
+                                "equip": false,
+                                "friends": false,
+                                "flags": false
+                            };
+
+                            if (obtainMembershipItems(this, this.membership)) isFlush["item"] = true;
 
                             if (first) {
                                 this.setFlag()
@@ -762,14 +773,14 @@ export class Client {
                                 this.setFlag("bought", {});
                                 this.setFlag("uid", nanoid(), true);
                                 this.setFlag("equipMigrate", 3);
-                                this.flush(false, false, false, true);
+
+                                isFlush["flags"] = true;
                             } else {
                                 if (!this.getFlag("flagSystem")) this.migrateFlags();
                                 if (!this.getFlag("bought")) this.setFlag("bought", {});
                                 if (!this.getFlag("uid")) {
-
                                     this.setFlag("uid", nanoid(), true);
-                                    this.flush(false, false, false, true);
+                                    isFlush["flags"] = true;
                                 }
                                 this.checkExpire();
                                 this.okgCount = Math.floor((this.data.playTime || 0) / PER_OKG[this.membership]);
@@ -778,8 +789,6 @@ export class Client {
 
 
                             let eventStatus = getEventStatus();
-                            let itemFlush = false;
-                            if (obtainMembershipGoods(this, this.membership)) itemFlush = true;
 
                             for (let i in EVENTS) {
                                 let event = EVENTS[i];
@@ -791,11 +800,11 @@ export class Client {
                                             this.setFlag("lastEP", event.EVENT_ID)
                                             this.setFlag("eventPoint", event.EVENT_POINT.INIT_POINT);
                                             if (event.EVENT_POINT.ENABLE_TEAM) this.joinNewTeam();
+                                            isFlush["flags"] = true;
                                         }
                                         let lastSupport = this.getFlag("lastSupport");
                                         if (event.hasOwnProperty("EVENT_SUPPORT") && event.EVENT_ID != lastSupport) {
                                             this.setFlag("lastSupport", event.EVENT_ID)
-                                            itemFlush = true;
                                             for (let item of event.EVENT_SUPPORT.ITEMS) {
                                                 if (item.expire == -1) {
                                                     this.obtain(item.id, {q: item.value, x: event.EVENT_EXPIRE_AT, mx: true})
@@ -809,6 +818,8 @@ export class Client {
                                                     continue;
                                                 }
                                             }
+                                            isFlush["item"] = true;
+                                            isFlush["flags"] = true;
                                         }
                                     }
 
@@ -821,7 +832,12 @@ export class Client {
                                 }
                             }
                             
-                            this.flush(itemFlush, false, false, true);
+                            this.flush(
+                                isFlush["item"],
+                                isFlush["equip"],
+                                isFlush["friends"],
+                                isFlush["flags"]
+                            );
 
                             if (black) {
                                 R.go({
@@ -885,14 +901,14 @@ export class Client {
                     IOLog.warn(`${this.id}님의 현재 정보를 불러오는데 실패하였습니다. 데이터 손실 방지를 위해 작업을 취소합니다.`);
                     return;
                 } else {
-                    IOLog.warn(`${this.id}님의 현재 정보를 불러오는데 실패하였습니다. 저장을 다시 시도합니다. 현재 재시도 횟수 : ${retryCount}`);
+                    IOLog.warn(`${this.id}님의 현재 정보를 불러오는데 실패하였습니다. 저장을 다시 시도합니다. 현재 재시도 횟수: ${retryCount}`);
                     return this.flush(box, equip, friends, flags, retryCount+1);
                 }
             } else {
                 IOLog.debug(`${this.id}님의 현재 정보를 불러왔습니다.`);
             }
             if (isNaN(this.money) || !this.data || isNaN(this.data.score)) {
-                IOLog.warn(`${this.id}님의 현재 정보에 문제가 있는것 같습니다. 데이터 손실 방지를 위해 작업을 취소합니다.`);
+                IOLog.warn(`${this.id}님의 현재 정보에 문제가 있는 것 같습니다. 데이터 손실 방지를 위해 작업을 취소합니다.`);
                 return;
             }
             DB.users.upsert(['_id', this.id]).set(
@@ -908,10 +924,10 @@ export class Client {
                         DB.users.findOne(['_id', this.id]).on((resultUser) => {
                             if (!resultUser) {
                                 if (retryCount >= 3) {
-                                    IOLog.warn(`${this.id}님의 새로운 정보를 불러오는데 실패하였습니다. 데이터 손실 방지를 위해 작업을 취소합니다.`);
+                                    IOLog.warn(`${this.id}님의 새로운 정보를 불러오는 데 실패하였습니다. 데이터 손실 방지를 위해 작업을 취소합니다.`);
                                 } else {
-                                    IOLog.warn(`${this.id}님의 새로운 정보를 불러오는데 실패하였습니다. 저장을 다시 시도합니다. 현재 재시도 횟수 : ${retryCount}`);
-                                    return this.flush(box, equip, friends, flags, retryCount+1);
+                                    IOLog.warn(`${this.id}님의 새로운 정보를 불러오는 데 실패하였습니다. 저장을 다시 시도합니다. 현재 재시도 횟수 : ${retryCount}`);
+                                    return this.flush(box, equip, friends, flags, retryCount + 1);
                                 }
                             } else {
                                 IOLog.notice(`${resultUser.nickname}(${this.id}) 님의 데이터를 저장했습니다. ${currentUser.kkutu.score} -> ${this.data.score} EXP / ${currentUser.money} -> ${this.money} 핑 (차이| ${this.data.score - currentUser.kkutu.score} EXP / ${this.money - currentUser.money}핑)`);

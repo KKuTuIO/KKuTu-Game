@@ -15,12 +15,14 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+import getLevel from "../sub/KKuTuLevel.js";
 
 const WSServer = (await import('ws')).default.Server;
 // import * as File from 'fs';
 import { reloads, IS_WS_SECURED, TEST_PORT, CRYPTO_KEY, ADMIN, TESTER, GAME_TYPE } from "../config.js";
 import { createServer } from 'https';
 import Secure from '../sub/secure.js';
+
 let Server;
 let HTTPS_Server;
 
@@ -43,7 +45,7 @@ import { decrypt } from "../sub/crypto.js";
 import * as MainDB from '../sub/db.js';
 import * as IOLog from '../sub/KKuTuIOLog.js';
 import { checkMessagneIntegrity } from '../sub/utils/AntiCheat.js';
-import { modifyUserRating, ratingInfo } from '../sub/utils/UserRating.js';
+import { getRatingLevel, modifyUserRating, ratingInfo } from '../sub/utils/UserRating.js';
 
 let DIC = {};
 let DNAME = {};
@@ -293,7 +295,7 @@ KKuTu.onClientMessage(function ($c, msg) {
             if (stable) {
                 if (msg.title.length > 24) stable = false;
                 if (msg.password.length > 32) stable = false;
-                if (!$c.admin && (msg.limit < 2 || msg.limit > 8)) {
+                if (!$c.admin && (msg.limit < 2 || msg.limit > ($c.perks["maximumPlayers"] || 8))) {
                     msg.code = 432;
                     stable = false;
                 }
@@ -304,6 +306,14 @@ KKuTu.onClientMessage(function ($c, msg) {
                 }
                 if ((msg.opts.noguest || msg.opts.onlybeginner || msg.opts.etiquette) && $c.guest) {
                     msg.code = 434;
+                    stable = false;
+                }
+                if (msg.opts.onlybeginner && (getLevel() >= 50)) {
+                    msg.code = 434;
+                    stable = false;
+                }
+                if (msg.opts.etiquette && getRatingLevel($c) < 1) {
+                    msg.code = 704;
                     stable = false;
                 }
                 // if (ENABLE_ROUND_TIME.indexOf(msg.time) == -1) stable = false;
