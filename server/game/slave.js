@@ -304,12 +304,12 @@ KKuTu.onClientMessage(function ($c, msg) {
                     msg.code = 433;
                     stable = false;
                 }
-                if ((msg.opts.noguest || msg.opts.onlybeginner || msg.opts.etiquette) && $c.guest) {
-                    msg.code = 434;
+                if ($c.guest && (msg.opts.noguest || msg.opts.onlybeginner || msg.opts.etiquette)) {
+                    msg.code = 701;
                     stable = false;
                 }
                 if (msg.opts.onlybeginner && (getLevel() >= 50)) {
-                    msg.code = 434;
+                    msg.code = 702;
                     stable = false;
                 }
                 if (msg.opts.etiquette && getRatingLevel($c) < 1) {

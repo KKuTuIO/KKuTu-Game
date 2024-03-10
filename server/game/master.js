@@ -1005,11 +1005,11 @@ function processClientRequest($c, msg) {
                     stable = false;
                 }
                 if ($c.guest && (msg.opts.noguest || msg.opts.onlybeginner || msg.opts.etiquette)) {
-                    msg.code = 434;
+                    msg.code = 701;
                     stable = false;
                 }
                 if (msg.opts.onlybeginner && (getLevel() >= 50)) {
-                    msg.code = 434;
+                    msg.code = 702;
                     stable = false;
                 }
                 if (msg.opts.etiquette && getRatingLevel($c) < 1) {
