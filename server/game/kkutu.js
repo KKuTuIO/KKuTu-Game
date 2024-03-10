@@ -500,8 +500,10 @@ export class Client {
             o.money = this.money;
             o.equip = this.equip;
             o.exordial = this.exordial;
-            o.rating = getRatingLevel(this) || 2;
+            o.rating = getRatingLevel(this);
             o.event = this.event;
+
+            if(o.rating === -1) o.rating = 2;
         }
         return o;
     };
