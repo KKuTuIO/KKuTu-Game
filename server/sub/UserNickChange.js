@@ -93,7 +93,7 @@ export function processUserNickChange ($c, userNick, fixedNick, callback) {
                 return;
             }
 
-            DB.users.update(['_id', userId]).set(['money', $body.money - 500], ['nickname', userNick], ['meanableNick', meanableNick], ['lastModifiedNickAt', date]).on();
+            DB.users.update(['_id', userId]).set(['money', fixedNick ? ($body.money - 500) : $body.money], ['nickname', userNick], ['meanableNick', meanableNick], ['lastModifiedNickAt', date]).on();
 
             IOLog.info(`${userId}님이 별명을 변경하셨습니다. 기존: ${currentNick} / 신규: ${userNick}`);
             callback(630);
