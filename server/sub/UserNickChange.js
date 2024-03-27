@@ -85,6 +85,9 @@ export function processUserNickChange ($c, userNick, fixedNick, callback) {
                     if(1717200000000 > Date.now()) { // 2024년 6월 1일까지 임시 적용
                         callback(621);
                         return;
+                    } else if($o['_id'].startsWith('facebook-') && 1733011200000 > Date.now()) { // 2024년 12월 1일까지 유예
+                        callback(621);
+                        return;
                     }
 
                     DB.users.update(['_id', $o['_id']]).set(['nickname', userNick + "#" + $o['_id'].split("-")[1].substring(0, 5)], ['meanableNick', '']);
