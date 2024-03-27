@@ -78,7 +78,7 @@ export function processUserNickChange ($c, userNick, fixedNick, callback) {
                 const lastLogin = $o.lastLogin || 0;
                 const unlockableAt = Date.now() + (1000 * 60 * 60 * 24 * 180);
 
-                if (lastLogin <= unlockableAt) {
+                if (lastLogin >= unlockableAt) {
                     callback(620);
                     return;
                 } else {
