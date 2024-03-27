@@ -84,7 +84,7 @@ export function processUserNickChange ($c, userNick, fixedNick, callback) {
                         return;
                     }
 
-                    DB.users.update(['_id', $o['_id']]).set(['nickname', userNick + "#" + $o['_id'].split("-")[1].substring(0, 5)], ['meanableNick'], '');
+                    DB.users.update(['_id', $o['_id']]).set(['nickname', userNick + "#" + $o['_id'].split("-")[1].substring(0, 5)], ['meanableNick', '']);
                 }
             }
 
