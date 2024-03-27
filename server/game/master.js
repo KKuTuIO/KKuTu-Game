@@ -665,7 +665,7 @@ export async function init (_SID, _CHAN) {
                     if (ref.result == 200) {
                         DIC[$c.id] = $c;
                         DNAME[($c.profile.title || $c.profile.name).replace(/\s/g, "")] = $c.id;
-                        MainDB.users.update(['_id', $c.id]).set(['server', SID]).on();
+                        MainDB.users.update(['_id', $c.id]).set(['lastLogin', Date.now()], ['server', SID]).on();
 
                         if (($c.guest && CAPTCHA_TO_GUEST) || alwaysTriggerCaptcha) {
                             $c.socket.send(JSON.stringify({

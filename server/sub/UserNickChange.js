@@ -75,7 +75,7 @@ export function processUserNickChange ($c, userNick, fixedNick, callback) {
 
         DB.users.findOne(['meanableNick', meanableNick]).on(function ($o) {
             if ($o) {
-                if ($o.lastLogin <= Date.now() + (1000 * 60 * 60 * 24 * 180)) {
+                if ($o.lastLogin !== undefined && $o.lastLogin <= Date.now() + (1000 * 60 * 60 * 24 * 180)) {
                     callback(620);
                     return;
                 } else {
