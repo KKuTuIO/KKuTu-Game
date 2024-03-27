@@ -18,16 +18,19 @@ const nickMax = nickConf.nick['max'];
 
 const term = nickConf.nick['term'] * 24 * 60 * 60 * 1000;
 
-export function processUserNickChange ($c, userNick, callback) {
-    userNick = userNick.trim();
+export function processUserNickChange ($c, userNick, fixedNick, callback) {
+    userNick = userNick ? userNick.trim() : undefined;
+    fixedNick = fixedNick ? fixedNick : false;
 
     const userId = $c.id;
+
     if (!userId || !userNick) {
         callback(600);
         return
     }
 
-    const length = userNick.length
+    const length = userNick.length;
+
     if (length < nickMin || length > nickMax || length === 0 || isBlank(userNick)) {
         callback(600);
         return
@@ -46,6 +49,8 @@ export function processUserNickChange ($c, userNick, callback) {
         callback(603);
         return
     }
+
+    if(!fixedNick) userNick = userNick + "#" + userId.split("-")[1].substring(0, 5);
 
     DB.users.findOne(['_id', userId]).on(function ($body) {
         const currentNick = $body.nickname;
@@ -69,15 +74,21 @@ export function processUserNickChange ($c, userNick, callback) {
         }
 
         DB.users.findOne(['meanableNick', meanableNick]).on(function ($body) {
-            if ($body) {
+            if ($body.lastLoginAt > Date.now() + (1000 * 60 * 60 * 24 * 180)) {
                 callback(620);
                 return;
+            } else {
+                if(1717200000000 > Date.now()) { // 2024년 6월 1일까지 임시 적용
+                    callback(620);
+                    return;
+                }
+
+                DB.users.update(['_id', $body['_id']]).set(['nickname', userNick + "#" + $body['_id'].split("-")[1].substring(0, 5)], ['meanableNick'], '');
             }
 
             DB.users.update(['_id', userId]).set(['nickname', userNick], ['meanableNick', meanableNick], ['lastModifiedNickAt', date]).on();
 
-            IOLog.info(`[NICK] ${userId}님이 닉네임을 변경하였습니다. 기존: ${currentNick} / 신규: ${userNick}`);
-
+            IOLog.info(`${userId}님이 별명을 변경하셨습니다. 기존: ${currentNick} / 신규: ${userNick}`);
             callback(630);
 
             $c.profile.title = userNick;
