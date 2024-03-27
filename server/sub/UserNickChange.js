@@ -80,7 +80,7 @@ export function processUserNickChange ($c, userNick, fixedNick, callback) {
                     return;
                 } else {
                     if(1717200000000 > Date.now()) { // 2024년 6월 1일까지 임시 적용
-                        callback(622);
+                        callback(621);
                         return;
                     }
 
@@ -89,7 +89,7 @@ export function processUserNickChange ($c, userNick, fixedNick, callback) {
             }
 
             if(fixedNick && $body.money < 500) {
-                callback(621);
+                callback(407);
                 return;
             }
 
