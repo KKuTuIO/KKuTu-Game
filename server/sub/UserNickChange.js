@@ -73,20 +73,27 @@ export function processUserNickChange ($c, userNick, fixedNick, callback) {
             return;
         }
 
-        DB.users.findOne(['meanableNick', meanableNick]).on(function ($body) {
-            if ($body.lastLoginAt > Date.now() + (1000 * 60 * 60 * 24 * 180)) {
-                callback(620);
-                return;
-            } else {
-                if(1717200000000 > Date.now()) { // 2024년 6월 1일까지 임시 적용
+        DB.users.findOne(['meanableNick', meanableNick]).on(function ($o) {
+            if ($o) {
+                if ($o.lastLoginAt > Date.now() + (1000 * 60 * 60 * 24 * 180)) {
                     callback(620);
                     return;
-                }
+                } else {
+                    if(1717200000000 > Date.now()) { // 2024년 6월 1일까지 임시 적용
+                        callback(620);
+                        return;
+                    }
 
-                DB.users.update(['_id', $body['_id']]).set(['nickname', userNick + "#" + $body['_id'].split("-")[1].substring(0, 5)], ['meanableNick'], '');
+                    DB.users.update(['_id', $o['_id']]).set(['nickname', userNick + "#" + $o['_id'].split("-")[1].substring(0, 5)], ['meanableNick'], '');
+                }
             }
 
-            DB.users.update(['_id', userId]).set(['nickname', userNick], ['meanableNick', meanableNick], ['lastModifiedNickAt', date]).on();
+            if($body.money < 500) {
+                callback(621);
+                return;
+            }
+
+            DB.users.update(['_id', userId]).set(['money', $body.money - 500], ['nickname', userNick], ['meanableNick', meanableNick], ['lastModifiedNickAt', date]).on();
 
             IOLog.info(`${userId}님이 별명을 변경하셨습니다. 기존: ${currentNick} / 신규: ${userNick}`);
             callback(630);
