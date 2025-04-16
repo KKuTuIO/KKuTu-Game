@@ -1,0 +1,24 @@
+Client/node_modules
+server/run.bat
+server/node_modules
+server/lib/node_modules
+server/Web/public/js/**
+!server/Web/public/js/jquery.js
+server/sub/global.json
+server/config/nick.json
+server/config/api.json
+server/config/event.json
+server/config/generic.json
+server/config/network.json
+server/config/rule.json
+server/config/word.json
+
+node_modules/**
+.idea
+logs/**
+suspicions/**
+.DS_Store
+
+Game 1.bat
+Game 2.bat
+Game 3.bat
