@@ -204,8 +204,8 @@ function calculateDifficulty(problem) {
     switch (operator) {
         case '+': return 1; break;
         case '-': return 1.2; break;
-        case '*': return 1.5; break;
-        case '/': return 2; break;
+        case '*': return 1.4; break;
+        case '/': return 1.6; break;
         default: return 1;
     }
 }
