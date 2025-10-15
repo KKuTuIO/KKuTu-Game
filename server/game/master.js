@@ -1159,7 +1159,6 @@ function processClientRequest($c, msg) {
                 if (msg.id || stable) $c.enter(msg, msg.spectate);
                 else $c.sendError(msg.code || 431);
             } else if (msg.type == 'setRoom') {
-                $c._tempFlags.setRoom = Date.now();
                 if (!allowRoomCreate) $c.sendError(462);
                 else if (stable) $c.setRoom(msg);
                 else $c.sendError(msg.code || 431);
