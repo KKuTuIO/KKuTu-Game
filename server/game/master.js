@@ -1101,6 +1101,8 @@ function processClientRequest($c, msg) {
             break;
         case 'enter':
         case 'setRoom':
+            if (Date.now() - ($c._tempFlags?.setRoom ?? 0) < 3000) return $c.sendError(476);
+
             if (!msg.title) stable = false;
             if (!msg.limit) stable = false;
             if (!msg.round) stable = false;
@@ -1151,10 +1153,13 @@ function processClientRequest($c, msg) {
                     stable = false;
                 }
             }
+
+            if (stable) $c._tempFlags.setRoom = Date.now();
             if (msg.type == 'enter') {
                 if (msg.id || stable) $c.enter(msg, msg.spectate);
                 else $c.sendError(msg.code || 431);
             } else if (msg.type == 'setRoom') {
+                $c._tempFlags.setRoom = Date.now();
                 if (!allowRoomCreate) $c.sendError(462);
                 else if (stable) $c.setRoom(msg);
                 else $c.sendError(msg.code || 431);
