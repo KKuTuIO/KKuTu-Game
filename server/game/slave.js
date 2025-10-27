@@ -326,11 +326,11 @@ KKuTu.onClientMessage(function ($c, msg) {
                     msg.code = 701;
                     stable = false;
                 }
-                if (msg.opts.onlybeginner && (getLevel($c) >= 50)) {
+                else if (msg.opts.onlybeginner && (getLevel($c) >= 50)) {
                     msg.code = 702;
                     stable = false;
                 }
-                if (msg.opts.etiquette && getRatingLevel($c) < 1) {
+                else if (msg.opts.etiquette && getRatingLevel($c) < 1) {
                     msg.code = 704;
                     stable = false;
                 }
