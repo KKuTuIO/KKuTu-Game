@@ -308,7 +308,7 @@ KKuTu.onClientMessage(function ($c, msg) {
             if (isNaN(msg.time)) stable = false;
 
             if (stable) {
-                if (Date.now() - ($c._tempFlags?.setRoom ?? 0) < 3000) {
+                if (Date.now() - ($c._tempFlags.setRoom === undefined ? 0 : $c._tempFlags.setRoom) < 3000) {
                     msg.code = 476;
                     stable = false;
                 }
