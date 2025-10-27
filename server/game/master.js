@@ -693,7 +693,7 @@ export async function init (_SID, _CHAN) {
                     $c.socket.close();
                     return;
                 }
-                if ($c.guest) {
+                if ($c.guest && SID !== "4") {
                     if (SID !== "0" && SID !== "1") {
                         $c.sendError(402);
                         $c.socket.close();
