@@ -23,6 +23,7 @@ const WSServer = (await import('ws')).default.Server;
 import { reloads, IS_WS_SECURED, TEST_PORT, CRYPTO_KEY, ADMIN, TESTER, GAME_TYPE } from "../config.js";
 import { createServer } from 'https';
 import Secure from '../sub/secure.js';
+import { guardMessage, attachGuard, detachGuard, SecurityOptions } from '../sub/utils/Guard.js';
 
 let allowedRoomTitles = ["아무나 들어오세요!", "1 VS 1", "다들 레디!", "친구들 모여라~", "자유롭게 대화해요!", "가르쳐 줄 고수 구합니다", "어서와~ 끄투리오는 처음이지?"];
 let Server;
@@ -179,6 +180,7 @@ Server.on('connection', function (socket, req) {
     MainDB.session.findOne(['_id', key]).limit(['profile', true]).on(function ($body) {
         $c = new KKuTu.Client(socket, $body ? $body.profile : null, key);
         $c.admin = ADMIN.indexOf($c.id) != -1;
+        attachGuard($c);
 
         if (DIC[$c.id]) {
             DIC[$c.id].send('error', {code: 408});
@@ -228,263 +230,262 @@ KKuTu.onClientMessage(function ($c, msg) {
     let now = (new Date()).getTime();
 
     if (!msg) return;
+    return guardMessage($c, msg, () => {
+        switch (msg.type) {
+            case 'drawingCanvas':
+                $c.drawingCanvas(msg);
+                break;
+            case 'canvasNotValid':
+                // $c.canvasNotValid(msg); // canvas diff not valid
+                break;
+            case 'yell':
+                if (!msg.value) return;
+                if (!$c.admin) return;
 
-    switch (msg.type) {
-        case 'drawingCanvas':
-            $c.drawingCanvas(msg);
-            break;
-        case 'canvasNotValid':
-            // $c.canvasNotValid(msg); // canvas diff not valid
-            break;
-        case 'yell':
-            if (!msg.value) return;
-            if (!$c.admin) return;
+                $c.publish('yell', {value: msg.value});
+                break;
+            case 'talk':
+                if (!msg.value) return;
+                if (!msg.value.substr) return;
+                if (!GUEST_PERMISSION.talk) if ($c.guest) {
+                    $c.send('error', {code: 401});
+                    return;
+                }
+                msg.value = msg.value.substr(0, 200);
+                if (msg.relay) {
+                    if (!checkMessagneIntegrity(msg)) process.send({type: "requestLastRelay", id: $c.id, value: msg});
+                    if ($c.subPlace) temp = $c.pracRoom;
+                    else if (!(temp = ROOM[$c.place])) return;
+                    if (!temp.gaming) return;
+                    if (temp.game.late) {
+                        $c.chat(msg.value);
+                    } else if (!temp.game.loading) {
+                        temp.submit($c, msg.value, msg.data);
+                    }
+                } else {
+                    if ($c.admin) {
+                        if (msg.value.charAt() == "#") {
+                            process.send({type: "admin", id: $c.id, value: msg.value});
+                            break;
+                        }
+                    }
+                    if (msg.whisper) {
+                        process.send({type: "tail-report", id: $c.id, chan: CHAN, place: $c.place, msg: msg});
+                        msg.whisper.split(',').forEach(v => {
+                            if (temp = DIC[DNAME[v]]) {
+                                temp.send('chat', {
+                                    from: $c.profile.title || $c.profile.name,
+                                    profile: $c.profile,
+                                    value: msg.value
+                                });
+                            } else {
+                                $c.sendError(424, v);
+                            }
+                        });
+                    } else {
+                        $c.chat(msg.value);
+                    }
+                }
+                break;
+            case 'enter':
+            case 'setRoom':
+                if (!msg.title) stable = false;
+                if (!msg.limit) stable = false;
+                if (!msg.round) stable = false;
+                if (!msg.time) stable = false;
+                if (!msg.opts) stable = false;
 
-            $c.publish('yell', {value: msg.value});
-            break;
-        case 'talk':
-            if (!msg.value) return;
-            if (!msg.value.substr) return;
-            if (!GUEST_PERMISSION.talk) if ($c.guest) {
-                $c.send('error', {code: 401});
-                return;
-            }
-            msg.value = msg.value.substr(0, 200);
-            if (msg.relay) {
-                if (!checkMessagneIntegrity(msg)) process.send({type: "requestLastRelay", id: $c.id, value: msg});
+                if (msg.opts && msg.opts.randmission && !msg.opts.mission) stable = false;
+                if (msg.opts && msg.opts.tactical && !msg.opts.mission) stable = false;
+
+                msg.code = false;
+                msg.limit = Number(msg.limit);
+                msg.mode = Number(msg.mode);
+                msg.round = Number(msg.round);
+                msg.time = Number(msg.time);
+
+                if (isNaN(msg.limit)) stable = false;
+                if (isNaN(msg.mode)) stable = false;
+                if (isNaN(msg.round)) stable = false;
+                if (isNaN(msg.time)) stable = false;
+
+                if (stable) {
+                    if (Date.now() - ($c._tempFlags.setRoom === undefined ? 0 : $c._tempFlags.setRoom) < 3000) {
+                        msg.code = 476;
+                        stable = false;
+                    }
+                    if ($c.guest && !allowedRoomTitles.includes(msg.title)) stable = false;
+                    if (msg.title.length > 24) stable = false;
+                    if (msg.password && msg.password.length !== 32) stable = false;
+                    if (!$c.admin && (msg.limit < 2 || msg.limit > ($c.perks["maximumPlayers"] || 8))) {
+                        msg.code = 432;
+                        stable = false;
+                    }
+                    if (msg.mode < 0 || msg.mode >= MODE_LENGTH) stable = false;
+                    if (msg.round < 1 || msg.round > 10) {
+                        msg.code = 433;
+                        stable = false;
+                    }
+                    if ($c.guest && (msg.opts.noguest || msg.opts.onlybeginner || msg.opts.etiquette)) {
+                        msg.code = 701;
+                        stable = false;
+                    } else if (msg.opts.onlybeginner && (getLevel($c) >= 50)) {
+                        msg.code = 702;
+                        stable = false;
+                    } else if (msg.opts.etiquette && getRatingLevel($c) < 1) {
+                        msg.code = 704;
+                        stable = false;
+                    }
+                    // if (ENABLE_ROUND_TIME.indexOf(msg.time) == -1) stable = false;
+                    if (msg.time < 5 || msg.time > 150) {
+                        stable = false;
+                    }
+                }
+
+                if (stable) $c._tempFlags.setRoom = Date.now();
+                if (msg.type == 'enter') {
+                    if (msg.id || stable) $c.enter(msg, msg.spectate);
+                    else $c.sendError(msg.code || 431);
+                } else if (msg.type == 'setRoom') {
+                    if (stable) $c.setRoom(msg);
+                    else $c.sendError(msg.code || 431);
+                }
+                break;
+            case 'leave':
+                if (!$c.place) return;
+
+                $c.leave();
+                break;
+            case 'ready':
+                if (!$c.place) return;
+                if (!GUEST_PERMISSION.ready) if ($c.guest) return;
+
+                $c.toggle();
+                break;
+            case 'start':
+                if (!$c.place) return;
+                if (!ROOM[$c.place]) return;
+                if (ROOM[$c.place].gaming) return;
+                if (!GUEST_PERMISSION.start) if ($c.guest) return;
+
+                $c.start();
+                break;
+            case 'practice':
+                if (!ROOM[$c.place]) return;
+                if (ROOM[$c.place].gaming) return;
+                if (!GUEST_PERMISSION.practice) if ($c.guest) return;
+                if (isNaN(msg.level = Number(msg.level))) return;
+                if (ROOM[$c.place].rule.ai) {
+                    if (msg.level < 0 || msg.level >= 6) return;
+                } else if (msg.level != -1) return;
+
+                $c.practice(msg.level);
+                break;
+            case 'invite':
+                if (!ROOM[$c.place]) return;
+                if (ROOM[$c.place].gaming) return;
+                if (ROOM[$c.place].master != $c.id) return;
+                if (!GUEST_PERMISSION.invite) if ($c.guest) return;
+                if (msg.target == "AI") {
+                    let level = parseInt(msg.level);
+                    if (isNaN(level)) level = 3;
+                    if (level < 0 || level >= 6) level = 3;
+                    ROOM[$c.place].addAI($c, level);
+                } else {
+                    process.send({type: "invite", id: $c.id, place: $c.place, target: msg.target});
+                }
+                break;
+            case 'inviteRes':
+                if (!(temp = ROOM[msg.from])) return;
+                if (!GUEST_PERMISSION.inviteRes) if ($c.guest) return;
+                if (msg.res) {
+                    $c.enter({id: msg.from}, false, true);
+                } else {
+                    if (DIC[temp.master]) DIC[temp.master].send('inviteNo', {target: $c.id});
+                }
+                break;
+            case 'form':
+                if (!msg.mode) return;
+                if (!ROOM[$c.place]) return;
+                if (ENABLE_FORM.indexOf(msg.mode) == -1) return;
+
+                $c.setForm(msg.mode);
+                break;
+            case 'team':
+                if (!ROOM[$c.place]) return;
+                if (ROOM[$c.place].gaming) return;
+                if ($c.ready) return;
+                if (isNaN(temp = Number(msg.value))) return;
+                if (temp < 0 || temp > 4) return;
+
+                $c.setTeam(Math.round(temp));
+                break;
+            case 'kick':
+                if (!msg.robot) if (!(temp = DIC[msg.target])) return;
+                if (!ROOM[$c.place]) return;
+                if (ROOM[$c.place].gaming) return;
+                if (!msg.robot) if ($c.place != temp.place) return;
+                if (ROOM[$c.place].master != $c.id) return;
+                if (ROOM[$c.place].kickVote) return;
+                if (!GUEST_PERMISSION.kick) if ($c.guest) return;
+
+                if (msg.robot) $c.kick(null, msg.target);
+                else $c.kick(msg.target);
+                break;
+            case 'kickVote':
+                if (!(temp = ROOM[$c.place])) return;
+                if (!temp.kickVote) return;
+                if ($c.id == temp.kickVote.target) return;
+                if ($c.id == temp.master) return;
+                if (temp.kickVote.list.indexOf($c.id) != -1) return;
+                if (!GUEST_PERMISSION.kickVote) if ($c.guest) return;
+
+                $c.kickVote($c, msg.agree);
+                break;
+            case 'handover':
+                if (!DIC[msg.target]) return;
+                if (!(temp = ROOM[$c.place])) return;
+                if (temp.gaming) return;
+                if ($c.place != DIC[msg.target].place) return;
+                if (temp.master != $c.id) return;
+
+                temp.master = msg.target;
+                temp.export();
+                break;
+            case 'wp':
+                if (!msg.value) return;
+                if (!GUEST_PERMISSION.wp) if ($c.guest) {
+                    $c.send('error', {code: 401});
+                    return;
+                }
+
+                msg.value = msg.value.substr(0, 200);
+                msg.value = msg.value.replace(/[^a-z가-힣]/g, "");
+                if (msg.value.length < 2) return;
+                break;
+            case 'setAI':
+                if (!msg.target) return;
+                if (!ROOM[$c.place]) return;
+                if (ROOM[$c.place].gaming) return;
+                if (ROOM[$c.place].master != $c.id) return;
+                if (isNaN(msg.level = Number(msg.level))) return;
+                if (msg.level < 0 || msg.level >= 6) return;
+                if (isNaN(msg.team = Number(msg.team))) return;
+                if (msg.team < 0 || msg.team > 4) return;
+
+                ROOM[$c.place].setAI(msg.target, Math.round(msg.level), Math.round(msg.team));
+                break;
+            case 'useItem':
                 if ($c.subPlace) temp = $c.pracRoom;
                 else if (!(temp = ROOM[$c.place])) return;
                 if (!temp.gaming) return;
-                if (temp.game.late) {
-                    $c.chat(msg.value);
-                } else if (!temp.game.loading) {
-                    temp.submit($c, msg.value, msg.data);
+                if (!temp.game.loading) {
+                    temp.useItem($c, msg.id);
                 }
-            } else {
-                if ($c.admin) {
-                    if (msg.value.charAt() == "#") {
-                        process.send({type: "admin", id: $c.id, value: msg.value});
-                        break;
-                    }
-                }
-                if (msg.whisper) {
-                    process.send({type: "tail-report", id: $c.id, chan: CHAN, place: $c.place, msg: msg});
-                    msg.whisper.split(',').forEach(v => {
-                        if (temp = DIC[DNAME[v]]) {
-                            temp.send('chat', {
-                                from: $c.profile.title || $c.profile.name,
-                                profile: $c.profile,
-                                value: msg.value
-                            });
-                        } else {
-                            $c.sendError(424, v);
-                        }
-                    });
-                } else {
-                    $c.chat(msg.value);
-                }
-            }
-            break;
-        case 'enter':
-        case 'setRoom':
-            if (!msg.title) stable = false;
-            if (!msg.limit) stable = false;
-            if (!msg.round) stable = false;
-            if (!msg.time) stable = false;
-            if (!msg.opts) stable = false;
-
-            if (msg.opts && msg.opts.randmission && !msg.opts.mission) stable = false;
-            if (msg.opts && msg.opts.tactical && !msg.opts.mission) stable = false;
-
-            msg.code = false;
-            msg.limit = Number(msg.limit);
-            msg.mode = Number(msg.mode);
-            msg.round = Number(msg.round);
-            msg.time = Number(msg.time);
-
-            if (isNaN(msg.limit)) stable = false;
-            if (isNaN(msg.mode)) stable = false;
-            if (isNaN(msg.round)) stable = false;
-            if (isNaN(msg.time)) stable = false;
-
-            if (stable) {
-                if (Date.now() - ($c._tempFlags.setRoom === undefined ? 0 : $c._tempFlags.setRoom) < 3000) {
-                    msg.code = 476;
-                    stable = false;
-                }
-                if ($c.guest && !allowedRoomTitles.includes(msg.title)) stable = false;
-                if (msg.title.length > 24) stable = false;
-                if (msg.password && msg.password.length !== 32) stable = false;
-                if (!$c.admin && (msg.limit < 2 || msg.limit > ($c.perks["maximumPlayers"] || 8))) {
-                    msg.code = 432;
-                    stable = false;
-                }
-                if (msg.mode < 0 || msg.mode >= MODE_LENGTH) stable = false;
-                if (msg.round < 1 || msg.round > 10) {
-                    msg.code = 433;
-                    stable = false;
-                }
-                if ($c.guest && (msg.opts.noguest || msg.opts.onlybeginner || msg.opts.etiquette)) {
-                    msg.code = 701;
-                    stable = false;
-                }
-                else if (msg.opts.onlybeginner && (getLevel($c) >= 50)) {
-                    msg.code = 702;
-                    stable = false;
-                }
-                else if (msg.opts.etiquette && getRatingLevel($c) < 1) {
-                    msg.code = 704;
-                    stable = false;
-                }
-                // if (ENABLE_ROUND_TIME.indexOf(msg.time) == -1) stable = false;
-                if (msg.time < 5 || msg.time > 150) {
-                    stable = false;
-                }
-            }
-
-            if (stable) $c._tempFlags.setRoom = Date.now();
-            if (msg.type == 'enter') {
-                if (msg.id || stable) $c.enter(msg, msg.spectate);
-                else $c.sendError(msg.code || 431);
-            } else if (msg.type == 'setRoom') {
-                if (stable) $c.setRoom(msg);
-                else $c.sendError(msg.code || 431);
-            }
-            break;
-        case 'leave':
-            if (!$c.place) return;
-
-            $c.leave();
-            break;
-        case 'ready':
-            if (!$c.place) return;
-            if (!GUEST_PERMISSION.ready) if ($c.guest) return;
-
-            $c.toggle();
-            break;
-        case 'start':
-            if (!$c.place) return;
-            if (!ROOM[$c.place]) return;
-            if (ROOM[$c.place].gaming) return;
-            if (!GUEST_PERMISSION.start) if ($c.guest) return;
-
-            $c.start();
-            break;
-        case 'practice':
-            if (!ROOM[$c.place]) return;
-            if (ROOM[$c.place].gaming) return;
-            if (!GUEST_PERMISSION.practice) if ($c.guest) return;
-            if (isNaN(msg.level = Number(msg.level))) return;
-            if (ROOM[$c.place].rule.ai) {
-                if (msg.level < 0 || msg.level >= 6) return;
-            } else if (msg.level != -1) return;
-
-            $c.practice(msg.level);
-            break;
-        case 'invite':
-            if (!ROOM[$c.place]) return;
-            if (ROOM[$c.place].gaming) return;
-            if (ROOM[$c.place].master != $c.id) return;
-            if (!GUEST_PERMISSION.invite) if ($c.guest) return;
-            if (msg.target == "AI") {
-                let level = parseInt(msg.level);
-                if(isNaN(level)) level = 3;
-                if(level < 0 || level >= 6) level = 3;
-                ROOM[$c.place].addAI($c, level);
-            } else {
-                process.send({type: "invite", id: $c.id, place: $c.place, target: msg.target});
-            }
-            break;
-        case 'inviteRes':
-            if (!(temp = ROOM[msg.from])) return;
-            if (!GUEST_PERMISSION.inviteRes) if ($c.guest) return;
-            if (msg.res) {
-                $c.enter({id: msg.from}, false, true);
-            } else {
-                if (DIC[temp.master]) DIC[temp.master].send('inviteNo', {target: $c.id});
-            }
-            break;
-        case 'form':
-            if (!msg.mode) return;
-            if (!ROOM[$c.place]) return;
-            if (ENABLE_FORM.indexOf(msg.mode) == -1) return;
-
-            $c.setForm(msg.mode);
-            break;
-        case 'team':
-            if (!ROOM[$c.place]) return;
-            if (ROOM[$c.place].gaming) return;
-            if ($c.ready) return;
-            if (isNaN(temp = Number(msg.value))) return;
-            if (temp < 0 || temp > 4) return;
-
-            $c.setTeam(Math.round(temp));
-            break;
-        case 'kick':
-            if (!msg.robot) if (!(temp = DIC[msg.target])) return;
-            if (!ROOM[$c.place]) return;
-            if (ROOM[$c.place].gaming) return;
-            if (!msg.robot) if ($c.place != temp.place) return;
-            if (ROOM[$c.place].master != $c.id) return;
-            if (ROOM[$c.place].kickVote) return;
-            if (!GUEST_PERMISSION.kick) if ($c.guest) return;
-
-            if (msg.robot) $c.kick(null, msg.target);
-            else $c.kick(msg.target);
-            break;
-        case 'kickVote':
-            if (!(temp = ROOM[$c.place])) return;
-            if (!temp.kickVote) return;
-            if ($c.id == temp.kickVote.target) return;
-            if ($c.id == temp.master) return;
-            if (temp.kickVote.list.indexOf($c.id) != -1) return;
-            if (!GUEST_PERMISSION.kickVote) if ($c.guest) return;
-
-            $c.kickVote($c, msg.agree);
-            break;
-        case 'handover':
-            if (!DIC[msg.target]) return;
-            if (!(temp = ROOM[$c.place])) return;
-            if (temp.gaming) return;
-            if ($c.place != DIC[msg.target].place) return;
-            if (temp.master != $c.id) return;
-
-            temp.master = msg.target;
-            temp.export();
-            break;
-        case 'wp':
-            if (!msg.value) return;
-            if (!GUEST_PERMISSION.wp) if ($c.guest) {
-                $c.send('error', {code: 401});
-                return;
-            }
-
-            msg.value = msg.value.substr(0, 200);
-            msg.value = msg.value.replace(/[^a-z가-힣]/g, "");
-            if (msg.value.length < 2) return;
-            break;
-        case 'setAI':
-            if (!msg.target) return;
-            if (!ROOM[$c.place]) return;
-            if (ROOM[$c.place].gaming) return;
-            if (ROOM[$c.place].master != $c.id) return;
-            if (isNaN(msg.level = Number(msg.level))) return;
-            if (msg.level < 0 || msg.level >= 6) return;
-            if (isNaN(msg.team = Number(msg.team))) return;
-            if (msg.team < 0 || msg.team > 4) return;
-
-            ROOM[$c.place].setAI(msg.target, Math.round(msg.level), Math.round(msg.team));
-            break;
-        case 'useItem':
-            if ($c.subPlace) temp = $c.pracRoom;
-            else if (!(temp = ROOM[$c.place])) return;
-            if (!temp.gaming) return;
-            if (!temp.game.loading) {
-                temp.useItem($c, msg.id);
-            }
-        default:
-            break;
-    }
+            default:
+                break;
+        }
+    });
 });
 KKuTu.onClientClosed(function ($c, code) {
     let room;
@@ -501,6 +502,7 @@ KKuTu.onClientClosed(function ($c, code) {
     for (let timer in $c.timers) {
         clearTimeout($c.timers[timer]);
     }
+    detachGuard($c);
     if ($c.profile) delete DNAME[$c.profile.title || $c.profile.name];
     if ($c.socket) $c.socket.removeAllListeners();
     KKuTu.publish('disconnRoom', {id: $c.id});

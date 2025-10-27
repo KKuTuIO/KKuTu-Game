@@ -37,6 +37,7 @@ import { verifyCaptcha } from '../sub/captcha.js';
 import { requestLastRelay, waitACinit, processSuspicion, rebuildWebHook } from '../sub/utils/AntiCheat.js';
 import { getRatingLevel, initUserRating } from '../sub/utils/UserRating.js';
 import { processReport } from "../sub/utils/ProcessReport.js";
+import { guardMessage, attachGuard, detachGuard, SecurityOptions } from '../sub/utils/Guard.js';
 import { processUserNickChange } from "../sub/UserNickChange.js";
 import { normalizeUserIp, checkBlockedAs, isBlockedIp } from "../sub/utils/AutoMod.js";
 import geoIp from 'geoipasn';
@@ -670,6 +671,7 @@ export async function init (_SID, _CHAN) {
             MainDB.session.findOne(['_id', key]).limit(['profile', true]).on(function ($body) {
                 $c = new KKuTu.Client(socket, $body ? $body.profile : null, key);
                 $c.admin = ADMIN.indexOf($c.id) != -1;
+                attachGuard($c);
 
                 if (!($c.admin || $c.membership >= 2) && Object.keys(DIC).length >= KKUTU_MAX) {
                     $c.sendError('full');
@@ -902,47 +904,48 @@ function heartbeat(id) {
 
 KKuTu.onClientMessage(function ($c, msg) {
     if (!msg) return;
+    return guardMessage($c, msg, () => {
+        if (!$c.passIdentity) {
+            if (msg.type === 'identity') {
+                $c.passIdentity = true;
 
-    if (!$c.passIdentity) {
-        if (msg.type === 'identity') {
-            $c.passIdentity = true;
+                logConnection($c, msg.fingerPrint2, msg.pcidC, msg.pcidL);
+            }
 
-            logConnection($c, msg.fingerPrint2, msg.pcidC, msg.pcidL);
+            return;
         }
 
-        return;
-    }
+        if (!$c.passCaptcha) {
+            if (msg.type === 'captcha') {
+                verifyCaptcha(msg.token, $c.socket._socket.remoteAddress, function (success) {
+                    if (success) {
+                        $c.passCaptcha = true;
 
-    if (!$c.passCaptcha) {
-        if (msg.type === 'captcha') {
-            verifyCaptcha(msg.token, $c.socket._socket.remoteAddress, function (success) {
-                if (success) {
-                    $c.passCaptcha = true;
+                        joinNewUser($c);
+                        try {
+                            processClientRequest($c, msg);
+                        } catch (e) {
+                            IOLog.error(`클라이언트의 요청을 처리하는 도중 오류가 발생하였습니다: ${e}`);
+                        }
 
-                    joinNewUser($c);
-                    try {
-                        processClientRequest($c, msg);
-                    } catch (e) {
-                        IOLog.error(`클라이언트의 요청을 처리하는 도중 오류가 발생하였습니다: ${e}`);
+                    } else {
+                        IOLog.warn(`${$c.socket._socket.remoteAddress} 아이피에서 CAPTCHA 인증에 실패했습니다.`);
+
+                        $c.sendError(448);
+                        $c.socket.close();
                     }
+                });
+            }
 
-                } else {
-                    IOLog.warn(`${$c.socket._socket.remoteAddress} 아이피에서 CAPTCHA 인증에 실패했습니다.`);
-
-                    $c.sendError(448);
-                    $c.socket.close();
-                }
-            });
+            return;
         }
 
-        return;
-    }
-
-    try {
-        processClientRequest($c, msg);
-    } catch (e) {
-        IOLog.error(`클라이언트의 요청을 처리하는 도중 오류가 발생하였습니다: ${e}`);
-    }
+        try {
+            processClientRequest($c, msg);
+        } catch (e) {
+            IOLog.error(`클라이언트의 요청을 처리하는 도중 오류가 발생하였습니다: ${e}`);
+        }
+    });
 });
 
 function logConnection($c, fingerprint2, pcidC, pcidL) {
@@ -1520,6 +1523,7 @@ KKuTu.onClientClosed(function ($c, code) {
     for (let timer in $c.timers) {
         clearTimeout($c.timers[timer]);
     }
+    detachGuard($c);
     if ($c._error != 409) MainDB.users.update(['_id', $c.id]).set(['server', ""]).on();
     if ($c.profile) delete DNAME[$c.profile.title || $c.profile.name];
     if ($c.socket) $c.socket.removeAllListeners();
