@@ -1101,8 +1101,6 @@ function processClientRequest($c, msg) {
             break;
         case 'enter':
         case 'setRoom':
-            if (Date.now() - ($c._tempFlags?.setRoom ?? 0) < 3000) return $c.sendError(476);
-
             if (!msg.title) stable = false;
             if (!msg.limit) stable = false;
             if (!msg.round) stable = false;
@@ -1124,6 +1122,10 @@ function processClientRequest($c, msg) {
             if (isNaN(msg.time)) stable = false;
 
             if (stable) {
+                if (Date.now() - ($c._tempFlags?.setRoom ?? 0) < 3000) {
+                    msg.code = 476;
+                    stable = false;
+                }
                 if ($c.guest && !allowedRoomTitles.includes(msg.title)) stable = false;
                 if (msg.title.length > 24) stable = false;
                 if (msg.password && msg.password.length !== 32) stable = false;
