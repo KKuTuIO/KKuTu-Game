@@ -417,7 +417,9 @@ export class Client {
         this.timers = {};
         this._pub = new Date();
         this._pubChat = new Date();
-        this._tempFlags = {};
+        this._tempFlags = {
+            "setRoom": 0
+        };
 
         socket.on('close', (code) => {
             if (ROOM[this.place]) ROOM[this.place].go(this);
