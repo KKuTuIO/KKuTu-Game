@@ -161,7 +161,7 @@ function processAdmin(id, value) {
                 try {
                     temp.socket.terminate();
                 } catch {
-                    temp.socket.close();
+                    temp.socket.close(1008);
                 }
                 auditAdminCommandExecution(id, cmd, value);
             }
