@@ -158,7 +158,11 @@ function processAdmin(id, value) {
         case "kill":
             if (temp = DIC[value]) {
                 temp.socket.send('{"type":"error","code":410}');
-                temp.socket.close();
+                try {
+                    temp.socket.terminate();
+                } catch {
+                    temp.socket.close();
+                }
                 auditAdminCommandExecution(id, cmd, value);
             }
             return null;
