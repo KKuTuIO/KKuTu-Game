@@ -154,6 +154,14 @@ export function onClientClosed (callback) {
     clientCloseHandler = callback;
 }
 
+export function cleanUpClient($c, code) {
+    try {
+        clientCloseHandler($c, code);
+    } catch (e) {
+        IOLog.error(`[Task] cleanUpClient for ${$c?.id} Failed! ${e}`);
+    }
+}
+
 export function getEventStatus() {
     return EVENTS.map( v => isEventGoing(v) );
 }
