@@ -1344,7 +1344,7 @@ function processClientRequest($c, msg) {
                 $c.money += $coupon.money;
                 $c.data.score += $coupon.score;
 
-                $c.send('obtain', { money: $c.money });
+                $c.send('obtain', { money: $coupon.money });
 
                 for (let key in $coupon.items) {
                     $c.obtain(key, {
