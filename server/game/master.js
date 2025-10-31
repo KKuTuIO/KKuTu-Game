@@ -1346,7 +1346,7 @@ function processClientRequest($c, msg) {
 
                 for (let key in $coupon.items) {
                     if ($c.box.hasOwnProperty(key)) {
-                        $c.box[key]["value"] += $coupon.items[key]["value"];
+                        $c.box[key]["value"] += $coupon.items[key];
                     } else {
                         $c.box[key] = $coupon.items[key];
                     }
