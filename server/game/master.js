@@ -1349,7 +1349,7 @@ function processClientRequest($c, msg) {
                 for (let key in $coupon.items) {
                     $c.obtain(key, {
                         q: $coupon.items[key].value,
-                        x: parseInt($coupon.items[key].expire) || undefined,
+                        x: $coupon.items[key].expire ? parseInt($coupon.items[key].expire) : undefined,
                         mx: !!parseInt($coupon.items.mx) || false
                     });
                 }
