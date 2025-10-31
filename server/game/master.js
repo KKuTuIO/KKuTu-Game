@@ -1323,6 +1323,7 @@ function processClientRequest($c, msg) {
                     return $c.sendError(715);
                 }
                 if ($coupon.maxUse !== -1 && $coupon.used >= $coupon.maxUse) {
+                    IOLog.info(`${$c.profile.title}(${$c.id})님이 사용 가능 횟수 ${$coupon.maxUse}를 초과하여 교환권 ${msg.value}을(를) 사용 시도하였습니다.`);
                     return $c.sendError(716);
                 }
                 if (!$coupon.flags['allowDuplicates'] && usedCoupons.hasOwnProperty($c.id)) {
@@ -1353,6 +1354,9 @@ function processClientRequest($c, msg) {
 
                 $c.setFlag('usedCoupons', usedCoupons);
                 $c.flush(true, false, false, true);
+
+                IOLog.info(`${$c.profile.title}(${$c.id})님이 교환권 ${msg.value}을(를) 사용하였습니다.`);
+                $c.send('obtain', { money: $c.money, box: $c.box });
             });
             break;
         case 'drawGacha':
