@@ -1326,7 +1326,7 @@ function processClientRequest($c, msg) {
                     IOLog.info(`${$c.profile.title}(${$c.id})님이 사용 가능 횟수 ${$coupon.maxUse}를 초과하여 교환권 ${msg.value}을(를) 사용 시도하였습니다.`);
                     return $c.sendError(716);
                 }
-                if (!$coupon.flags['allowDuplicates'] && usedCoupons.hasOwnProperty($c.id)) {
+                if (!$coupon.flags['allowDuplicates'] && usedCoupons.hasOwnProperty(msg.value)) {
                     IOLog.info(`${$c.profile.title}(${$c.id})님이 이미 사용한 교환권 ${msg.value}을(를) 사용 시도하였습니다.`);
                     return $c.sendError(717);
                 }
@@ -1355,7 +1355,8 @@ function processClientRequest($c, msg) {
                 }
 
                 usedCoupons[msg.value] = true;
-                $c.setFlag('usedCoupons', usedCoupons);
+
+                $c.setFlag('usedCoupons', 1);
                 $c.flush(true, false, false, true);
 
                 IOLog.info(`${$c.profile.title}(${$c.id})님이 교환권 ${msg.value}을(를) 사용하였습니다.`);
