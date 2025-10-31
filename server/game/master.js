@@ -1354,6 +1354,7 @@ function processClientRequest($c, msg) {
                     });
                 }
 
+                usedCoupons[msg.value] = true;
                 $c.setFlag('usedCoupons', usedCoupons);
                 $c.flush(true, false, false, true);
 
