@@ -1345,11 +1345,11 @@ function processClientRequest($c, msg) {
                 $c.data.score += $coupon.score;
 
                 for (let key in $coupon.items) {
-                    if ($c.box.hasOwnProperty(key)) {
-                        $c.box[key]["value"] += $coupon.items[key];
-                    } else {
-                        $c.box[key] = $coupon.items[key];
-                    }
+                    $c.obtain(key, {
+                        q: $coupon.items[key].value,
+                        x: parseInt($coupon.items[key].expire) || undefined,
+                        mx: !!parseInt($coupon.items.mx) || false
+                    });
                 }
 
                 $c.setFlag('usedCoupons', usedCoupons);
