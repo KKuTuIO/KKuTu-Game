@@ -1354,9 +1354,8 @@ function processClientRequest($c, msg) {
                     });
                 }
 
-                usedCoupons[msg.value] = true;
-
-                $c.setFlag('usedCoupons', 1);
+                usedCoupons[msg.value] = 1;
+                $c.setFlag('usedCoupons', usedCoupons);
                 $c.flush(true, false, false, true);
 
                 IOLog.info(`${$c.profile.title}(${$c.id})님이 교환권 ${msg.value}을(를) 사용하였습니다.`);
