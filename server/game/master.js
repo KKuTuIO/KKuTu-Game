@@ -1344,6 +1344,8 @@ function processClientRequest($c, msg) {
                 $c.money += $coupon.money;
                 $c.data.score += $coupon.score;
 
+                $c.send('obtain', { money: $c.money });
+
                 for (let key in $coupon.items) {
                     $c.obtain(key, {
                         q: $coupon.items[key].value,
@@ -1356,7 +1358,7 @@ function processClientRequest($c, msg) {
                 $c.flush(true, false, false, true);
 
                 IOLog.info(`${$c.profile.title}(${$c.id})님이 교환권 ${msg.value}을(를) 사용하였습니다.`);
-                $c.send('obtain', { money: $c.money, box: $c.box });
+                $c.sendError(718);
             });
             break;
         case 'drawGacha':
