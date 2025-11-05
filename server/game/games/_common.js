@@ -17,7 +17,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { GAME_TYPE, MISSION, MISSION_TACT, EXAMPLE_TITLE } from '../../config.js';
+import { RULE, GAME_TYPE, MISSION, MISSION_TACT, EXAMPLE_TITLE } from '../../config.js';
 export { GAME_TYPE, MISSION, MISSION_TACT, EXAMPLE_TITLE };
 import { Tail } from '../../sub/lizard.js';
 import MultiArray from 'multiarr';
@@ -220,6 +220,7 @@ export function getAuto (char, subc, type, chain) {
     let gameType = GAME_TYPE[my.mode];
     let aqs, adc, aft;
     let bool = type == 1;
+    let allowSet = getInjeongThemeAllowSet(my);
     
     if (my.rule.rule == "Classic" || my.rule.rule == "Wordstack")
         adc = char + (subc ? ("|"+subc) : "");
@@ -289,8 +290,9 @@ export function getAuto (char, subc, type, chain) {
     }
 
     DB.kkutu[my.rule.lang].find(aqs).limit(bool ? 1 : 123).on(function ($md) {
-        if (chain) aft($md.filter(function (item) { return !chain.includes(item); }));
-        else aft($md);
+        let result = chain ? $md.filter(function (item) { return !chain.includes(item); }) : $md;
+        if (allowSet) result = result.filter((item) => isDocAllowedByInjeongAllowSet(item, allowSet));
+        aft(result);
     });
 
     return R;
@@ -323,11 +325,57 @@ export function getManner(char, subc) {
     return gameCache[char] + gameCache[subc];
 }
 
+export function getInjeongThemeAllowlist(my) {
+    if (!my || !my.opts) return null;
+    if (!my.opts.injeong) return null;
+    if (!my.opts.injeongpick) return null;
+    if (!Array.isArray(my.opts.injpick)) return null;
+    if (RULE[GAME_TYPE[my.mode]].rule !== "Classic") return null;
+    return my.opts.injpick;
+}
+
+
+function getInjeongThemeAllowSet(my) {
+    let list = getInjeongThemeAllowlist(my);
+    if (list === null) return null;
+    let set = new Set();
+    for (let item of list) {
+        if (typeof item !== 'string') continue;
+        let trimmed = item.trim();
+        if (!trimmed) continue;
+        set.add(trimmed.toUpperCase());
+    }
+    return set;
+}
+export { getInjeongThemeAllowSet as INJ_ALLOW_SET };
+
+function filterDocsByAllowSet(list, allowSet) {
+    if (!allowSet) return list;
+    if (!Array.isArray(list) || !list.length) return [];
+    return list.filter((item) => isDocAllowedByInjeongAllowSet(item, allowSet));
+}
+
+function isDocAllowedByInjeongAllowSet(item, allowSet) {
+    if (!allowSet) return true;
+    if (!item || typeof item !== 'object') return false;
+    if (!(item.flag & KOR_FLAG.INJEONG)) return true;
+    if (!allowSet.size) return false;
+    let theme = typeof item.theme === 'string' ? item.theme : '';
+    if (!theme) return false;
+    let parts = theme.split(',');
+    if (parts.includes('ODW')) return true;
+    for (let part of parts) {
+        if (allowSet.has(part)) return true;
+    }
+    return false;
+}
+
 export function getWordList(char, subc, iij) {
     let my = this;
     let MAN = DB.MANNER_CACHE[my.rule.lang];
     let mode = GAME_TYPE[my.mode];
     let R = new MultiArray();
+    let allowSet = getInjeongThemeAllowSet(my);
 
     if (mode == "EKT" || mode == "KKT") {
         if (mode != "EKT" || char.length != 1)
@@ -339,19 +387,35 @@ export function getWordList(char, subc, iij) {
     if (!MAN.hasOwnProperty(char)) {
         // 처리 없음
     } else if (my.rule.lang == 'ko') {
-        R.append(MAN[char][baseIndex][0]); // 일반 단어
-        if (!my.opts.strict) R.append(MAN[char][baseIndex][1]); // 깐깐
-        if (!my.opts.loanword) R.append(MAN[char][baseIndex][2]); // 우리말
+        const append = (list) => {
+            if (Array.isArray(list) && list.length) R.append(list);
+        };
+        const appendInjeong = (list) => {
+            if (!Array.isArray(list) || !list.length) return;
+            const filtered = filterDocsByAllowSet(list, allowSet);
+            if (filtered.length) R.append(filtered);
+        };
+        append(MAN[char][baseIndex][0]); // 일반 단어
+        if (!my.opts.strict) append(MAN[char][baseIndex][1]); // 깐깐
+        if (!my.opts.loanword) append(MAN[char][baseIndex][2]); // 우리말
         if (my.opts.injeong) {
-            R.append(MAN[char][baseIndex][3]); // HBW 어인정
-            if (iij) R.append(MAN[char][baseIndex][5]); // 나머지 어인정
+            appendInjeong(MAN[char][baseIndex][3]); // HBW 어인정
+            if (iij) appendInjeong(MAN[char][baseIndex][5]); // 나머지 어인정
         }
         if (my.opts.opendict) {
-            R.append(MAN[char][baseIndex][4]); // ODW 어인정
+            append(MAN[char][baseIndex][4]); // ODW 어인정
         }
     } else {
-        R.append(MAN[char][baseIndex][0]); // 한국어 외
-        if (my.opts.injeong && iij) R.append(MAN[char][baseIndex][1])
+        const append = (list) => {
+            if (Array.isArray(list) && list.length) R.append(list);
+        };
+        const appendInjeong = (list) => {
+            if (!Array.isArray(list) || !list.length) return;
+            const filtered = filterDocsByAllowSet(list, allowSet);
+            if (filtered.length) R.append(filtered);
+        };
+        append(MAN[char][baseIndex][0]); // 한국어 외
+        if (my.opts.injeong && iij) appendInjeong(MAN[char][baseIndex][1]);
     }
     
     if (subc) R = R.concat(getWordList.call(my, subc));
@@ -364,25 +428,42 @@ function getSpcWordList(char, subc, iij) {
     let MAN = DB.SPC_MANNER_CACHE[my.rule.lang];
     let baseIndex = (my.opts.sami && my.game.wordLength == 3) ? 1 : 0;
     let R = new MultiArray();
+    let allowSet = getInjeongThemeAllowSet(my);
 
     if (!char) return R;
 
     if (!MAN.hasOwnProperty(char)) {
         // 처리 없음
     } else if (my.rule.lang == 'ko') {
-        R.append(MAN[char][baseIndex][0]); // 일반 단어
-        if (!my.opts.strict) R.append(MAN[char][baseIndex][1]); // 깐깐
-        if (!my.opts.loanword) R.append(MAN[char][baseIndex][2]); // 우리말
+        const append = (list) => {
+            if (Array.isArray(list) && list.length) R.append(list);
+        };
+        const appendInjeong = (list) => {
+            if (!Array.isArray(list) || !list.length) return;
+            const filtered = filterDocsByAllowSet(list, allowSet);
+            if (filtered.length) R.append(filtered);
+        };
+        append(MAN[char][baseIndex][0]); // 일반 단어
+        if (!my.opts.strict) append(MAN[char][baseIndex][1]); // 깐깐
+        if (!my.opts.loanword) append(MAN[char][baseIndex][2]); // 우리말
         if (my.opts.injeong) {
-            R.append(MAN[char][baseIndex][3]); // HBW 어인정
-            if (iij) R.append(MAN[char][baseIndex][5]); // 나머지 어인정
+            appendInjeong(MAN[char][baseIndex][3]); // HBW 어인정
+            if (iij) appendInjeong(MAN[char][baseIndex][5]); // 나머지 어인정
         }
         if (my.opts.opendict) {
-            R.append(MAN[char][baseIndex][4]); // ODW 어인정
+            append(MAN[char][baseIndex][4]); // ODW 어인정
         }
     } else {
-        R.append(MAN[char][0]); // 한국어 외
-        if (my.opts.injeong && iij) R.append(MAN[char][1]);
+        const append = (list) => {
+            if (Array.isArray(list) && list.length) R.append(list);
+        };
+        const appendInjeong = (list) => {
+            if (!Array.isArray(list) || !list.length) return;
+            const filtered = filterDocsByAllowSet(list, allowSet);
+            if (filtered.length) R.append(filtered);
+        };
+        append(MAN[char][0]); // 한국어 외
+        if (my.opts.injeong && iij) appendInjeong(MAN[char][1]);
     }
     
     if (!subc) return R;

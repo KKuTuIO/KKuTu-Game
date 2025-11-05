@@ -23,7 +23,7 @@ import { DB, DIC, runAs, shuffle, getMission, getChar, getSubChar, getPenalty,
     getRandom, getManner, getWordList, getPreScore, getRandomChar,
     ROBOT_START_DELAY, ROBOT_HIT_LIMIT, ROBOT_LENGTH_LIMIT,
     ROBOT_THINK_COEF, ROBOT_TYPE_COEF, EXAMPLE_TITLE, GAME_TYPE,
-    KOR_GROUP, ENG_ID, JPN_ID, KOR_FLAG, KOR_STRICT } from './_common.js';
+    KOR_GROUP, ENG_ID, JPN_ID, KOR_FLAG, KOR_STRICT, INJ_ALLOW_SET } from './_common.js';
 
 let WISH_WORD_CACHE = {'ko': {}, 'en': {}};
 
@@ -484,11 +484,24 @@ export function submit (client, text) {
         }
 
         if ($doc) {
-            let theme = $doc.theme.split(',');
-            if (
-                !my.opts.injeong && ($doc.flag & KOR_FLAG.INJEONG) &&
-                (!theme || (theme && !theme.includes("ODW")))
-            ) denied();
+            let theme = $doc.theme ? $doc.theme.split(',') : null;
+            let allowSet = INJ_ALLOW_SET(my);
+            let isInjeongWord = !!($doc.flag & KOR_FLAG.INJEONG);
+            let isNonOdwInjeong = isInjeongWord && (!theme || !theme.includes("ODW"));
+            if (!my.opts.injeong && isNonOdwInjeong) denied();
+            else if (allowSet && isNonOdwInjeong) {
+                let allowed = false;
+                if (allowSet.size) {
+                    for (let code of (theme || [])) {
+                        if (allowSet.has(code)) {
+                            allowed = true;
+                            break;
+                        }
+                    }
+                }
+                if (!allowed) denied();
+                else preApproved();
+            }
             else if (!my.opts.opendict && theme && theme.includes("ODW")) denied();
             else if (mode != "KKT" && theme && theme.includes("KKT")) denied();
             else if (theme && theme.includes("DDW")) denied();

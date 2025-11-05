@@ -1985,7 +1985,7 @@ export class Room {
     };
     
     set (room) {
-        let i, k, ijc, ij;
+        let i, k, ij;
 
         if (this.title !== room.title) this.lastTitle = this.master;
         this.title = room.title;
@@ -2000,12 +2000,11 @@ export class Room {
                 k = OPTIONS[i].name.toLowerCase();
                 this.opts[k] = room.opts[k] && this.rule.opts.includes(i);
             }
-            if (ijc = this.rule.opts.includes("ijp")) {
+            this.opts.injpick = [];
+            if (this.rule.opts.includes("ijp") || this.rule.opts.includes("inp")) {
                 ij = IJP[this.rule.lang];
-                this.opts.injpick = (room.opts.injpick || []).filter((item) => {
-                    return ij.includes(item);
-                });
-            } else this.opts.injpick = [];
+                this.opts.injpick = (room.opts.injpick || []).filter((item) => ij.includes(item));
+            }
         }
         if (!this.rule.ai) {
             while (this.removeAI(false, true)) ;
@@ -2039,7 +2038,9 @@ export class Room {
         }
         // 인정픽 검사
         if (!this.rule) return 400;
-        if (this.rule.opts.includes("ijp")) {
+        const needsInjPick = this.rule.opts.includes("ijp") ||
+            (this.rule.opts.includes("inp") && this.opts.injeongpick && this.opts.injpick);
+        if (needsInjPick) {
             if (!this.opts.injpick) return 400;
             if (!this.opts.injpick.length) return 413;
             if (!this.opts.injpick.every((item) => {
