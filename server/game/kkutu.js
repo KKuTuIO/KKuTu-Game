@@ -430,9 +430,18 @@ export class Client {
         };
 
         socket.on('close', (code) => {
-            if (ROOM[this.place]) ROOM[this.place].go(this);
-            if (this.subPlace) this.pracRoom.go(this);
-            clientCloseHandler(this, code);
+            try {
+                const room = ROOM?.[this.place];
+                if (room) {
+                    room.go(this);
+                } else if (this.place && ROOM) {
+                    IOLog.warn(`Tried to run go() on missing room ${this.place} for ${this.id} during close`);
+                }
+                if (this.subPlace) this.pracRoom?.go(this);
+                clientCloseHandler(this, code);
+            } catch (e) {
+                IOLog.error(`[CRIT] socket.on('close') created an unknown exception: ${e}`);
+            }
         });
 
         socket.on('message', (msg) => {
