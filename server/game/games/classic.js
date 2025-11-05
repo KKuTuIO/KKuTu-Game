@@ -564,6 +564,7 @@ export function useItem (client, id) {
     if (my.game.ilock) return client.publish('turnError', {code: 420}, true); // 아이템 연속사용
     if (firstMove) return client.publish('turnError', {code: 421}, true); // 첫 턴
     if (my.game.used[uid] >= 5 || my.game.item[uid][id] >= 2) return client.publish('turnError', {code: 429}, true); // 횟수 초과
+    if (((new Date()).getTime() - my.game.roundAt) > my.game.turnTime / 5) return client.publish('turnError', {code: 422}, true); // 제한시간 초과
 
     switch (id) {
         case 0: // 넘기기 - 다음 사람으로 턴으로 넘김
