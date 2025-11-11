@@ -853,7 +853,8 @@ function joinNewUser($c) {
         test: global.test,
         caj: !!$c._checkAjae,
         membership: $c.membership,
-        event: event
+        event: event,
+        survey: MainDB.survey
     });
     narrateFriends($c.id, $c.friends, "on");
     KKuTu.publish('conn', {user: $c.getData()});
