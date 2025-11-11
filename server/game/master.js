@@ -1502,7 +1502,7 @@ function processClientRequest($c, msg) {
                 $c.flush(false, false, false, true);
             }
 
-            return $c.send('surveyToken', $c.getFlag("surveyToken"));
+            return $c.send('surveyToken', { value: $c.getFlag("surveyToken") });
         case 'import':
             if ($c.guest) return $c.sendError(711);
             if (!msg.gid) return $c.sendError(400);
