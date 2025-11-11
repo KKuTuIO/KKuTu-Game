@@ -1500,13 +1500,13 @@ function processClientRequest($c, msg) {
             break;
         case 'getSurveyToken':
             if ($c.guest) return $c.sendError(400);
-            if (!$c.hasFlag("surveyToken") || $c.getFlagTime("surveyToken").getFullYear() == new Date().getFullYear()) {
+            if (!$c.hasFlag("surveyToken") || $c.getFlagTime("surveyToken").getFullYear() !== new Date().getFullYear()) {
                 $c.setFlag("surveyToken", nanoid(), true);
                 $c.flush(false, false, false, true);
             }
             const UTCDate = new Date().toISOString().slice(0, 10);
             const token = $c.getFlag("surveyToken");
-            const sha256 = crypto.createHash('sha256'/*, HMAC_KEY */).update(token + UTCDate).digest("base64");
+            const sha256 = crypto.createHash('sha256', HMAC_KEY).update(token + UTCDate).digest("base64");
 
             return $c.send('surveyToken', {
                 date: UTCDate,
