@@ -78,6 +78,7 @@ export let redis;
 export let kkutu_injeong;
 export let kkutu_shop;
 export let kkutu_shop_desc;
+export let kkutu_survey;
 export let session;
 export let users;
 export let family;
@@ -88,6 +89,7 @@ export let MANNER_CACHE;
 export let SPC_MANNER_CACHE;
 export let THEME_CACHE;
 export let shop;
+export let survey;
 
 let ready;
 
@@ -115,6 +117,7 @@ function connectPg(noRedis) {
         kkutu_injeong = new mainAgent.Table("kkutu_injeong");
         kkutu_shop = new mainAgent.Table("kkutu_shop");
         kkutu_shop_desc = new mainAgent.Table("kkutu_shop_desc");
+        kkutu_survey = new mainAgent.Table("survey");
 
         session = new mainAgent.Table("session");
         users = new mainAgent.Table("users");
@@ -127,9 +130,11 @@ function connectPg(noRedis) {
         SPC_MANNER_CACHE = {'ko': {}, 'en': {}}; // 쿵쿵따, 끄투 매너 캐시
         THEME_CACHE = {'ko': {}, 'en': {}}
         shop = {};
+        survey = {};
 
         await refreshWordcache();
         await refreshShopcache();
+        await refreshSurveycache();
 
         ConnectionLog.initDatabase(pgMain);
         UserBlockModule.initDatabase(pgMain);
@@ -344,5 +349,21 @@ export async function refreshShopcache () {
         shop = newCache;
 
         IOLog.info(`${Object.keys(shop).length} 개의 아이템 데이터를 메모리에 불러왔습니다.`)
+    });
+};
+
+export async function refreshSurveycache () {
+    IOLog.info('설문조사 데이터 갱신을 시작합니다...')
+
+    kkutu_survey.find().on(function ($res) {
+        let newCache = {};
+
+        $res.forEach(function (item) {
+            newCache[item.campaignId] = item;
+        });
+
+        survey = newCache;
+
+        IOLog.info(`${Object.keys(survey).length} 개의 설문조사 데이터를 메모리에 불러왔습니다.`)
     });
 };
