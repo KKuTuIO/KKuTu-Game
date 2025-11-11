@@ -1504,9 +1504,12 @@ function processClientRequest($c, msg) {
                 $c.setFlag("surveyToken", nanoid(), true);
                 $c.flush(false, false, false, true);
             }
+            const UTCDate = new Date().toISOString().slice(0, 10);
             const token = $c.getFlag("surveyToken");
-            const sha256 = crypto.createHmac('sha256', HMAC_KEY).update(token).digest("base64");
+            const sha256 = crypto.createHash('sha256'/*, HMAC_KEY */).update(token + UTCDate).digest("base64");
+
             return $c.send('surveyToken', {
+                date: UTCDate,
                 value: sha256
             });
         case 'import':
