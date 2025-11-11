@@ -23,13 +23,15 @@ let HTTPS_Server;
 // import { writeSnapshot }from "heapdump";
 import * as KKuTu from './kkutu.js';
 import { decrypt } from "../sub/crypto.js";
-import { UID_ALPHABET, UID_LETTER, UID_IMPORT_LETTER, reloads, DISCORD_WEBHOOK, GAME_TYPE, IS_WS_SECURED, WEB_KEY, CRYPTO_KEY,
-    ADMIN, CAPTCHA_TO_GUEST, CAPTCHA_SITE_KEY,
-    TEST_PORT, KKUTU_MAX, TESTER, CAPTCHA_TO_USER, EVENTS, EXCHANGEABLES } from "../config.js";
+import crypto from 'crypto';
+import {
+    UID_ALPHABET, UID_LETTER, UID_IMPORT_LETTER, reloads, DISCORD_WEBHOOK,GAME_TYPE,
+    IS_WS_SECURED, WEB_KEY, CRYPTO_KEY, ADMIN, CAPTCHA_TO_GUEST, CAPTCHA_SITE_KEY,
+    TEST_PORT, KKUTU_MAX, TESTER, CAPTCHA_TO_USER, EVENTS, EXCHANGEABLES, HMAC_KEY
+} from "../config.js";
 import { customAlphabet } from 'nanoid';
 const nanoid = customAlphabet(UID_ALPHABET, UID_LETTER);
 const importId = customAlphabet(UID_ALPHABET, UID_IMPORT_LETTER);
-import sha256 from "fast-sha256";
 
 import { CronJob } from 'cron';
 import * as IOLog from '../sub/KKuTuIOLog.js';
@@ -1502,11 +1504,10 @@ function processClientRequest($c, msg) {
                 $c.setFlag("surveyToken", nanoid(), true);
                 $c.flush(false, false, false, true);
             }
-            const UTCDate = new Date().toISOString().slice(0, 10);
-            const token = $c.getFlag("surveyToken") + UTCDate;
+            const token = $c.getFlag("surveyToken");
+            const sha256 = crypto.createHmac('sha256', HMAC_KEY).update(token).digest("base64");
             return $c.send('surveyToken', {
-                date: UTCDate,
-                value: sha256(token)
+                value: sha256
             });
         case 'import':
             if ($c.guest) return $c.sendError(711);

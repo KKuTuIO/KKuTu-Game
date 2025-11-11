@@ -199,6 +199,7 @@ export let EQUIP_SLOTS;
 export let UID_ALPHABET;
 export let UID_LETTER;
 export let UID_IMPORT_LETTER;
+export let HMAC_KEY;
 
 reloads.generic = () => {
     ({
@@ -209,7 +210,8 @@ reloads.generic = () => {
         EQUIP_GROUP,
         UID_ALPHABET,
         UID_LETTER,
-        UID_IMPORT_LETTER
+        UID_IMPORT_LETTER,
+        HMAC_KEY
     } = getJson('generic.json'));
     TESTER = ADMIN.concat(TESTER);
     EQUIP_SLOTS = Object.keys(EQUIP_GROUP);
