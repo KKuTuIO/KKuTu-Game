@@ -1495,6 +1495,14 @@ function processClientRequest($c, msg) {
                surveys: MainDB.survey
             });
             break;
+        case 'getSurveyToken':
+            if ($c.guest) return $c.sendError(400);
+            if (!$c.hasFlag("surveyToken") || $c.getFlagTime("surveyToken").getFullYear() == new Date().getFullYear()) {
+                $c.setFlag("surveyToken", nanoid(), true);
+                $c.flush(false, false, false, true);
+            }
+
+            return $c.send('surveyToken', $c.getFlag("surveyToken"));
         case 'import':
             if ($c.guest) return $c.sendError(711);
             if (!msg.gid) return $c.sendError(400);
