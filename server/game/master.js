@@ -29,6 +29,7 @@ import { UID_ALPHABET, UID_LETTER, UID_IMPORT_LETTER, reloads, DISCORD_WEBHOOK, 
 import { customAlphabet } from 'nanoid';
 const nanoid = customAlphabet(UID_ALPHABET, UID_LETTER);
 const importId = customAlphabet(UID_ALPHABET, UID_IMPORT_LETTER);
+import sha256 from "fast-sha256";
 
 import { CronJob } from 'cron';
 import * as IOLog from '../sub/KKuTuIOLog.js';
@@ -1501,8 +1502,12 @@ function processClientRequest($c, msg) {
                 $c.setFlag("surveyToken", nanoid(), true);
                 $c.flush(false, false, false, true);
             }
-
-            return $c.send('surveyToken', { value: $c.getFlag("surveyToken") });
+            const UTCDate = new Date().toISOString().slice(0, 10);
+            const token = $c.getFlag("surveyToken") + UTCDate;
+            return $c.send('surveyToken', {
+                date: UTCDate,
+                value: sha256(token)
+            });
         case 'import':
             if ($c.guest) return $c.sendError(711);
             if (!msg.gid) return $c.sendError(400);
