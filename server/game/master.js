@@ -110,7 +110,7 @@ function processAdmin(id, value) {
         return p2;
     });
 
-    auditAdminCommandExecution(id, cmd, value);
+    if (cmd) auditAdminCommandExecution(id, cmd, value);
 
     switch (cmd) {
         case "delroom":
