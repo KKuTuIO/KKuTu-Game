@@ -18,92 +18,89 @@ const nickMax = nickConf.nick['max'];
 
 const term = nickConf.nick['term'] * 24 * 60 * 60 * 1000;
 
-export function processUserNickChange ($c, userNick, fixedNick, callback) {
+export async function processUserNickChange ($c, userNick, fixedNick) {
     userNick = userNick ? userNick.trim() : undefined;
     fixedNick = fixedNick ? fixedNick : false;
 
     const userId = $c.id;
 
     if (!userId || !userNick) {
-        callback(600);
-        return
+        return 600
     }
 
     const length = userNick.length;
 
     if (length < nickMin || length > nickMax || length === 0 || isBlank(userNick)) {
-        callback(600);
-        return
+        return 600
     }
     if (!userNick.replace(' ', '').match(pattern)) {
-        callback(601);
-        return
+        return 601
     }
 
     if (userNick.replace(' ', '').toLowerCase().match(bad)) {
-        callback(602);
-        return
+        return 602
     }
 
     if (userNick.replace(' ', '').toLowerCase().match(black)) {
-        callback(603);
-        return
+        return 603
     }
 
     if(!fixedNick) userNick = userNick + "#" + userId.split("-")[1].substring(0, 5);
 
-    DB.users.findOne(['_id', userId]).on(function ($body) {
+    try {
+        const $body = await DB.users.findOne(['_id', userId]).on();
+        if (!$body) {
+            IOLog.warn(`유저를 찾을 수 없습니다. (${userId})`);
+            return 500;
+        }
         const currentNick = $body.nickname;
         const meanableNick = userNick.replace(sPattern, '').toLowerCase();
         const currentDate = Date.now();
 
         if (currentNick === userNick) {
-            callback(610);
-            return;
+            return 610
         }
 
         if ($body.isLimitModifyNick) {
-            callback(611);
-            return;
+            return 611;
         }
 
         if (!isChangeableNickname($body.lastModifiedNickAt)) {
-            callback(612);
-            return;
+            return 612;
         }
 
-        DB.users.findOne(['meanableNick', meanableNick]).on(function ($o) {
-            if ($o) {
-                const lastLogin = parseInt($o.lastLogin) || 0;
-                const sixMonths = 1000 * 60 * 60 * 24 * 180;
+        const $o = await DB.users.findOne(['meanableNick', meanableNick]).on();
+        if ($o) {
+            const lastLogin = parseInt($o.lastLogin) || 0;
+            const sixMonths = 1000 * 60 * 60 * 24 * 180;
 
-                if (lastLogin + sixMonths > currentDate) {
-                    callback(620);
-                    return;
-                } else {
-                    if ($o['_id'].startsWith('facebook-') && 1733011200000 > currentDate) { // 2024년 12월 1일까지 유예
-                        callback(621);
-                        return;
-                    }
-
-                    DB.users.update(['_id', $o['_id']]).set(['nickname', userNick + "#" + $o['_id'].split("-")[1].substring(0, 5)], ['meanableNick', '']);
+            if (lastLogin + sixMonths > currentDate) {
+                return 620;
+            } else {
+                if ($o['_id'].startsWith('facebook-') && 1733011200000 > currentDate) { // 2024년 12월 1일까지 유예
+                    return 621;
                 }
+
+                await DB.users.update(['_id', $o['_id']]).set(['nickname', userNick + "#" + $o['_id'].split("-")[1].substring(0, 5)], ['meanableNick', '']);
             }
+        }
 
-            if(fixedNick && !$c.membership && $body.money < 100) {
-                callback(407);
-                return;
-            }
+        if(fixedNick && !$c.membership && $body.money < 100) {
+            return 407;
+        }
 
-            DB.users.update(['_id', userId]).set(['money', fixedNick ? ($c.membership ? $body.money : $body.money - 100) : $body.money], ['nickname', userNick], ['meanableNick', meanableNick], ['lastModifiedNickAt', currentDate]).on();
+        await DB.users.update(['_id', userId]).set(['money', fixedNick ? ($c.membership ? $body.money : $body.money - 100) : $body.money], ['nickname', userNick], ['meanableNick', meanableNick], ['lastModifiedNickAt', currentDate]).on();
 
-            IOLog.info(`${userId}님이 별명을 변경하셨습니다. 기존: ${currentNick} / 신규: ${userNick}`);
-            callback(630);
+        IOLog.info(`${userId}님이 별명을 변경하셨습니다. 기존: ${currentNick} / 신규: ${userNick}`);
 
-            $c.profile.title = userNick;
-            KKuTu.publish('nickUpdate', {user: $c.getData()});
-        })
-    })
+        $c.profile.title = userNick;
+        KKuTu.publish('nickUpdate', {user: $c.getData()});
+
+        return 630;
+    } catch (e) {
+        IOLog.error("닉네임 변경 중 오류:", e)
+        return 500;
+    }
 }
 
 const isChangeableNickname = (nickChangeTime) => {
