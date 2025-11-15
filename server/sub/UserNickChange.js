@@ -8,13 +8,15 @@ import { fileURLToPath } from 'url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const nickConf = JSON.parse(readFileSync(`${__dirname}/../config/nick.json`, 'utf8'));
 
-const pattern = RegExp(nickConf.pattern['pattern'], nickConf.pattern['flags']['pattern']);
-const bad = RegExp(nickConf.pattern['bad'], nickConf.pattern['flags']['bad']);
-const black = RegExp(nickConf.pattern['black'], nickConf.pattern['flags']['black']);
-const sPattern = RegExp(nickConf.pattern['similarity'], nickConf.pattern['flags']['similarity']);
+const pattern = RegExp(nickConf.pattern['pattern'], nickConf.pattern['flags']['pattern']),
+badpatterns = nickConf.pattern['bad'],
+badflag = nickConf.pattern['flags']['bad'],
+badList = badpatterns.map(pattern => new RegExp(pattern, badflag)),
+black = RegExp(nickConf.pattern['black'], nickConf.pattern['flags']['black']),
+sPattern = RegExp(nickConf.pattern['similarity'], nickConf.pattern['flags']['similarity']);
 
-const nickMin = nickConf.nick['min'];
-const nickMax = nickConf.nick['max'];
+const nickMin = nickConf.nick['min'],
+nickMax = nickConf.nick['max'];
 
 const term = nickConf.nick['term'] * 24 * 60 * 60 * 1000;
 
@@ -37,11 +39,15 @@ export async function processUserNickChange ($c, userNick, fixedNick) {
         return 601
     }
 
-    if (userNick.replace(' ', '').toLowerCase().match(bad)) {
-        return 602
+    const userNick_rep = userNick.replace(sPattern, '').toLowerCase();
+
+    for (const bad of badList) {
+        if (userNick_rep.match(bad)) {
+            return 602
+        }
     }
 
-    if (userNick.replace(' ', '').toLowerCase().match(black)) {
+    if (userNick_rep.match(black)) {
         return 603
     }
 
@@ -81,7 +87,7 @@ export async function processUserNickChange ($c, userNick, fixedNick) {
                     return 621;
                 }
 
-                await DB.users.update(['_id', $o['_id']]).set(['nickname', userNick + "#" + $o['_id'].split("-")[1].substring(0, 5)], ['meanableNick', '']);
+                await DB.users.update(['_id', $o['_id']]).set(['nickname', userNick + "#" + $o['_id'].split("-")[1].substring(0, 5)], ['meanableNick', '']).on();
             }
         }
 
