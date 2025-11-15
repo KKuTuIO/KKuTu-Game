@@ -64,7 +64,7 @@ export async function processUserNickChange ($c, userNick, fixedNick) {
         const currentDate = Date.now();
 
         if (currentNick === userNick) {
-            return 610
+            return 610;
         }
 
         if ($body.isLimitModifyNick) {
