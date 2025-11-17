@@ -1947,6 +1947,7 @@ export class Room {
             if (this.gaming) {
                 x = this.game.seq.indexOf(client.id);
                 if (x != -1) {
+                    this.interrupt();
                     if (this.game.seq.length <= 2) {
                         this.game.seq.splice(x, 1);
                         this.roundEnd();
