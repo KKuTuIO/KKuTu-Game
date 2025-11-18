@@ -865,7 +865,7 @@ export class Client {
                                     return;
                                 }
                             });
-                            
+
                             this.removeFlag("first");
                             this.setFlag("flagSystem", 2);
                             this.setFlag("bought", {});
