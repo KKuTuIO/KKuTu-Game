@@ -987,10 +987,10 @@ export class Client {
         DB.users.findOne(['_id', this.id]).on((currentUser) => {
             if (!currentUser) {
                 if (retryCount >= 5) {
-                    IOLog.warn(`${this.id}님의 현재 정보를 불러오는데 실패하였습니다. 데이터 손실 방지를 위해 작업을 취소합니다.`);
+                    IOLog.warn(`${this.id}님의 현재 정보를 불러오는 데 실패하였습니다. 데이터 손실 방지를 위해 작업을 취소합니다.`);
                     return;
                 } else {
-                    IOLog.warn(`${this.id}님의 현재 정보를 불러오는데 실패하였습니다. 저장을 다시 시도합니다. 현재 재시도 횟수: ${retryCount}`);
+                    IOLog.warn(`${this.id}님의 현재 정보를 불러오는 데 실패하였습니다. 저장을 다시 시도합니다. 현재 재시도 횟수: ${retryCount}`);
                     return this.flush(box, equip, friends, flags, createdat, retryCount+1);
                 }
             } else {

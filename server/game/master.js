@@ -43,6 +43,7 @@ import { processReport } from "../sub/utils/ProcessReport.js";
 import { guardMessage, attachGuard, detachGuard, SecurityOptions } from '../sub/utils/Guard.js';
 import { processUserNickChange } from "../sub/UserNickChange.js";
 import { normalizeUserIp, checkBlockedAs, isBlockedIp } from "../sub/utils/AutoMod.js";
+import { processVendorMigration } from "../sub/VendorDBMigration.js";
 import geoIp from 'geoipasn';
 import { Webhook, MessageBuilder } from 'discord-webhook-node';
 import getLevel from "../sub/KKuTuLevel.js";
@@ -1509,10 +1510,28 @@ function processClientRequest($c, msg) {
             const token = $c.getFlag("surveyToken");
             const sha256 = crypto.createHash('sha256', HMAC_KEY).update(token + UTCDate).digest("base64");
 
-            return $c.send('surveyToken', {
+            $c.send('surveyToken', {
                 date: UTCDate,
                 value: sha256
             });
+            break;
+        case 'processVendorMigration':
+            if ($c.guest) return $c.sendError(400);
+            if ($c.hasFlag("vendorMigrate")) return $c.sendError(644);
+
+            processVendorMigration($c.id, (migrated) => {
+                if (migrated) {
+                    $c.sendError(643);
+                    $c.socket.close();
+                    return;
+                } else {
+                    $c.setFlag("vendorMigrate", 2, true);
+                    $c.flush(false, false, false, true);
+                    return $c.sendError(644);
+                }
+            });
+
+            break;
         case 'import':
             if ($c.guest) return $c.sendError(711);
             if (!msg.gid) return $c.sendError(400);

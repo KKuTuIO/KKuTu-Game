@@ -61,7 +61,7 @@ function modifyOldUserId(oldUserId, userId, callback) {
 }
 
 function mergeAccounts(oldId, newId, callback) {
-    const query = "SELECT _id, money, kkutu, box, equip FROM users WHERE _id IN ($1, $2)";
+    const query = "SELECT _id, money, kkutu, box, equip, flags FROM users WHERE _id IN ($1, $2)";
 
     database.query(query, [oldId, newId], (err, res) => {
         if (err || res.rows.length < 2) {
@@ -79,6 +79,7 @@ function mergeAccounts(oldId, newId, callback) {
 
         // --- 2. Box 합산 ---
         const newBox = newUser.box || {};
+        const newFlags = newUser.flags || {};
         const oldBox = oldUser.box || {};
         const oldEquip = oldUser.equip || {};
         const itemsToAdd = {};
@@ -145,10 +146,14 @@ function mergeAccounts(oldId, newId, callback) {
             }
         }
 
-        // DB 업데이트 (items -> box)
-        const updateQuery = "UPDATE users SET money = $1, kkutu = $2, box = $3 WHERE _id = $4";
+        newFlags["vendorMigrate"] = {
+            value: 1,
+            time: Math.floor(new Date().getTime() / 1000)
+        };
 
-        database.query(updateQuery, [mergedMoney, newKkutu, newBox, newId], (updateErr) => {
+        // DB 업데이트 (items -> box)
+        const updateQuery = "UPDATE users SET money = $1, kkutu = $2, box = $3, flags = $4 WHERE _id = $5";
+        database.query(updateQuery, [mergedMoney, newKkutu, newBox, newFlags, newId], (updateErr) => {
             if (updateErr) {
                 IOLog.error(`[Merge] 계정 데이터 합산에 실패하였습니다: ${updateErr.stack}`);
                 return callback(false);
