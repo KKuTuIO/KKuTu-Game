@@ -957,10 +957,10 @@ function logConnection($c, fingerprint2, pcidC, pcidL) {
     MainDB.ConnectionLog.addLog(id, name, ip, channel, userAgent, fingerprint2, pcidC, pcidL);
 }
 
-async function processClientRequest($c, msg) {
+function processClientRequest($c, msg) {
     let stable = true;
     let temp;
-    // let now = (new Date()).getTime();
+    let now = (new Date()).getTime();
 
     if (!msg) return;
 
@@ -1196,19 +1196,18 @@ async function processClientRequest($c, msg) {
         case 'nickChange':
             if ($c.guest) return;
             if (!msg.value || typeof msg.isFixed === "undefined") return $c.sendError(400);
-
-            const code = await processUserNickChange($c, msg.value, msg.isFixed);
-            $c.sendError(code);
+            processUserNickChange($c, msg.value, msg.isFixed, function (code) {
+                $c.sendError(code);
+            });
             break;
         case 'mailBox':
             if ($c.guest) return;
-
+            
             const currentTime = Date.now();
             
-            try {
-                const mails = await MainDB.mailbox.find().on();
+            MainDB.mailbox.find().on(function(mails) {
                 if (!mails) return $c.send('mailBox', { mails: [] });
-
+                
                 const validMails = mails.filter(mail => {
                     // 만료 여부 확인
                     if (mail.expire && new Date(mail.expire) < new Date(currentTime)) return false;
@@ -1232,19 +1231,14 @@ async function processClientRequest($c, msg) {
                 }));
                 
                 $c.send('mailBox', { mails: mailsToSend });
-            } catch (e) {
-                IOLog.error("mailBox 로딩 중 오류:", e);
-                $c.sendError(500);
-            }
+            });
             break;
     
         case 'obtainMail':
             if ($c.guest) return;
             if (!msg.id) return $c.sendError(400);
             
-            try {
-                const mail = await MainDB.mailbox.findOne(['_id', msg.id]).on();
-
+            MainDB.mailbox.findOne(['_id', msg.id]).on(function(mail) {
                 if (!mail) return $c.sendError(404);
                 
                 if (mail.expire && new Date(mail.expire) < new Date()) {
@@ -1287,27 +1281,24 @@ async function processClientRequest($c, msg) {
                             }
                         }
                     });
+                    
                     $c.flush(true, false, true);
                 }
-
-                await MainDB.mailbox.update(['_id', msg.id]).set(updates).on();
-
-                $c.send('obtainMail', { 
-                    result: true, 
-                    id: mail._id, 
-                    rewards: mail.rewards || [] 
+                
+                MainDB.mailbox.update(['_id', msg.id]).set(updates).on(function() {
+                    $c.send('obtainMail', { 
+                        result: true, 
+                        id: mail._id, 
+                        rewards: mail.rewards || [] 
+                    });
                 });
-            } catch (e) {
-                IOLog.error("obtainMail 처리 중 오류:", e);
-                $c.sendError(500);
-            }
+            });
             break;
         case 'useCoupon':
             if ($c.guest) return $c.sendError(400);
             if (!msg.value) return $c.sendError(400);
 
-            try {
-                const $coupon = await MainDB.coupons.findOne(['code', msg.value]).on();
+            MainDB.coupons.findOne(['code', msg.value]).on(function ($coupon) {
                 if (!$coupon) return $c.sendError(715);
                 if (!$coupon.active) return $c.sendError(715);
 
@@ -1336,7 +1327,7 @@ async function processClientRequest($c, msg) {
                     }
                 }
 
-                await MainDB.coupons.update(['code', msg.value]).set(['used', $coupon.used]).on();
+                MainDB.coupons.update(['code', msg.value]).set(['used', $coupon.used]).on();
 
                 $c.money += $coupon.money;
                 $c.data.score += $coupon.score;
@@ -1357,10 +1348,7 @@ async function processClientRequest($c, msg) {
 
                 IOLog.info(`${$c.profile.title}(${$c.id})님이 교환권 ${msg.value}을(를) 사용하였습니다.`);
                 // $c.sendError(718);
-            } catch (e) {
-                IOLog.error("useCoupon 처리 중 오류:", e)
-                $c.sendError(500)
-            }
+            });
             break;
         case 'drawGacha':
             if ($c.gaming) return $c.sendError(438);

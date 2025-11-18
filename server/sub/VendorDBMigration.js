@@ -7,70 +7,51 @@ export function initDatabase (_database) {
 }
 
 export function processVendorMigration(userId, callback) {
+    if (!userId || userId.indexOf('-') === -1) {
+        if (callback) callback(false);
+        return;
+    }
+
     let oldUserId = userId.split('-')[1];
 
     hasUser(oldUserId, function (result) {
         if (result) {
-            modifyOldUserId(oldUserId, userId, function () {
-                modifyFriendsUserId(oldUserId, userId, function () {
-                    IOLog.info(`${oldUserId} 의 식별 번호가 ${userId} 로 이전되었습니다.`);
-
-                    if (callback !== undefined) {
-                        callback();
-                    }
-                });
-            });
-        } else {
-            // TODO: 친구 목록 수정 이전에 마이그레이션된 계정을 위한 임시 조치이므로, 향후 제거 필요
-            modifyFriendsUserId(oldUserId, userId, function () {
+            modifyOldUserId(oldUserId, userId, function (err) {
+                if (!err) IOLog.info(`${oldUserId} 의 식별번호가 ${userId}(으)로 이전되었습니다.`);
                 if (callback !== undefined) {
-                    callback();
+                    callback(!err);
                 }
             });
+        } else {
+            if (callback !== undefined) callback(false);
         }
     });
 }
 
 function hasUser(userId, callback) {
-    let query = "SELECT * " +
-        "FROM users " +
-        "WHERE _id = '" + userId + "';";
+    const query = "SELECT _id FROM users WHERE _id = $1";
 
-    database.query(query, (err, result) => {
+    database.query(query, [userId], (err, result) => {
         if (err) {
-            return IOLog.error(`Error executing query ${err.stack}`);
+            IOLog.error(`Error executing query ${err.stack}`);
+            if (callback !== undefined) callback(false);
+            return;
         }
 
         if (callback !== undefined) {
-            callback(result.rows.length === 1);
+            callback(result && result.rows && result.rows.length === 1);
         }
     })
 }
 
 function modifyOldUserId(oldUserId, userId, callback) {
-    let query = "UPDATE users " +
-        "SET _id = '" + userId + "' " +
-        "WHERE _id = '" + oldUserId + "';";
+    const query = "UPDATE users SET _id = $1 WHERE _id = $2";
 
-    database.query(query, (err) => {
+    database.query(query, [userId, oldUserId], (err) => {
         if (err) {
-            return IOLog.error(`Error executing query ${err.stack}`);
-        }
-
-        if (callback !== undefined) {
-            callback();
-        }
-    })
-}
-
-function modifyFriendsUserId(oldUserId, userId, callback) {
-    let query = "UPDATE users " +
-        "SET friends = cast(REPLACE(friends :: TEXT, '\"" + oldUserId + "\"', '\"" + userId + "\"') AS JSON) " +
-        "WHERE friends :: TEXT ~ '\"" + oldUserId + "\"';";
-
-    database.query(query, (err) => {
-        if (err) {
-            return IOLog.error(`Error executing query ${err.stack}`);
+            IOLog.error(`Error executing query ${err.stack}`);
+            if (callback !== undefined) callback(err);
+            return;
         }
 
         if (callback !== undefined) {

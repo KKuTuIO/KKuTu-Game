@@ -805,161 +805,166 @@ export class Client {
                         result: 200
                     });
                 } else {
-                    DB.VendorDBMigration.processVendorMigration(this.id, () => {
-                        DB.users.findOne(['_id', this.id]).on(($user) => {
-                            let first = !$user;
-                            let black = first ? "" : $user.black;
+                    DB.users.findOne(['_id', this.id]).on(($user) => {
+                        let first = !$user;
+                        let black = first ? "" : $user.black;
 
-                            if (first) {
-                                $user = IS_TEST_SERVER ? {money: 2500} : {money: 0};
-                            }
-                            if (black === "null" || black === "") {
-                                black = false;
-                            }
-                            if (black === "chat") {
-                                black = false;
-                                this.noChat = true;
-                            }
+                        if (first) {
+                            $user = IS_TEST_SERVER ? {money: 2500} : {money: 0};
+                        }
+                        if (black === "null" || black === "") {
+                            black = false;
+                        }
+                        if (black === "chat") {
+                            black = false;
+                            this.noChat = true;
+                        }
 
-                            /* 망할 셧다운제
-                            if(Cluster.isMaster && !this.isAjae){ // null일 수는 없다.
-                                this.isAjae = Ajae.checkAjae(($user.birthday || "").split('-'));
-                                if(this.isAjae === null){
-                                    if(this._birth) this._checkAjae = setTimeout(() => {
-                                        this.sendError(442);
-                                        this.socket.close();
-                                    }, 300000);
-                                    else{
-                                        this.sendError(441);
+                        /* 망할 셧다운제
+                        if(Cluster.isMaster && !this.isAjae){ // null일 수는 없다.
+                            this.isAjae = Ajae.checkAjae(($user.birthday || "").split('-'));
+                            if(this.isAjae === null){
+                                if(this._birth) this._checkAjae = setTimeout(() => {
+                                    this.sendError(442);
+                                    this.socket.close();
+                                }, 300000);
+                                else{
+                                    this.sendError(441);
+                                    this.socket.close();
+                                    return;
+                                }
+                            }
+                        }*/
+
+                        this.exordial = $user.exordial || "";
+                        this.createdat = $user.createdat || 0;
+                        this.equip = $user.equip || {};
+                        this.box = $user.box || {};
+                        this.data = new Data($user.kkutu);
+                        this.money = Number($user.money);
+                        this.friends = $user.friends || {};
+                        this.flags = $user.flags || {};
+                        this.membership = obtainMembershipId($user.membership);
+                        this.perks = obtainMembershipPerks(this.membership);
+                        this.server = $user.server || "";
+
+                        let isFlush = {
+                            "item": false,
+                            "equip": false,
+                            "friends": false,
+                            "flags": true
+                        };
+
+                        if (obtainMembershipItems(this, this.membership)) isFlush["item"] = true;
+
+                        if (this.hasFlag("first")) {
+                            DB.VendorDBMigration.processVendorMigration(this.id, (migrated) => {
+                                if (migrated) {
+                                    this.sendError(643);
+                                    this.socket.close();
+                                    return;
+                                }
+                            });
+                            
+                            this.removeFlag("first");
+                            this.setFlag("flagSystem", 2);
+                            this.setFlag("bought", {});
+                            this.setFlag("uid", nanoid(), true);
+                            this.setFlag("equipMigrate", 3);
+                            this.flush(false, false, false, true);
+                        } else {
+                            if (!this.getFlag("flagSystem")) this.migrateFlags();
+                            if (!this.getFlag("bought")) this.setFlag("bought", {});
+                            if (!this.getFlag("uid")) {
+                                this.setFlag("uid", nanoid(), true);
+                                isFlush["flags"] = true;
+                            }
+                            this.checkExpire();
+                            this.okgCount = Math.floor((this.data.playTime || 0) / PER_OKG[this.membership]);
+                            if (this.okgCount > MAX_OKG[this.membership]) this.okgCount = MAX_OKG[this.membership];
+                        }
+
+                        let eventStatus = getEventStatus();
+
+                        for (let i in EVENTS) {
+                            let event = EVENTS[i];
+                            let status = eventStatus[i];
+                            if (status) {
+                                if (eventStatus == 1) { // 이벤트 진행 중에만 갱신하는 정보
+                                    let lastEP = this.getFlag("lastEP");
+                                    if (event.hasOwnProperty("EVENT_POINT") && event.EVENT_ID != lastEP) { // 포인트 이벤트 정보 갱신 필요
+                                        this.setFlag("lastEP", event.EVENT_ID)
+                                        this.setFlag("eventPoint", event.EVENT_POINT.INIT_POINT);
+                                        if (event.EVENT_POINT.ENABLE_TEAM) this.joinNewTeam();
+                                        isFlush["flags"] = true;
+                                    }
+                                    let lastSupport = this.getFlag("lastSupport");
+                                    if (event.hasOwnProperty("EVENT_SUPPORT") && event.EVENT_ID != lastSupport) {
+                                        this.setFlag("lastSupport", event.EVENT_ID)
+                                        for (let item of event.EVENT_SUPPORT.ITEMS) {
+                                            if (item.expire == -1) {
+                                                this.obtain(item.id, {q: item.value, x: event.EVENT_EXPIRE_AT, mx: true})
+                                                continue;
+                                            } else if (item.expire > 0) {
+                                                let expire = Math.floor(new Date().getTime() / 1000) + (item.expire * 86400);
+                                                this.obtain(item.id, {q: item.value, x: expire, mx: true})
+                                                continue;
+                                            } else {
+                                                this.obtain(item.id, {q: item.value})
+                                                continue;
+                                            }
+                                        }
+                                        isFlush["item"] = true;
+                                        isFlush["flags"] = true;
+                                    }
+                                }
+
+                                // 종료 전까지 항상 갱신되는 정보
+                                if (event.hasOwnProperty("EVENT_POINT")) {
+                                    this.event.point = this.getFlag("eventPoint") || 0;
+                                    this.event.epTotal = this.getFlag("epTotal") || 0;
+                                    if (event.EVENT_POINT.ENABLE_TEAM) this.event.team = this.getFlag("eventTeam");
+                                }
+                            }
+                        }
+
+                        this.flush(
+                            isFlush["item"],
+                            isFlush["equip"],
+                            isFlush["friends"],
+                            isFlush["flags"]
+                        );
+
+                        if (black) {
+                            R.go({
+                                result: black ? 444 : 443,
+                                black: black
+                            });
+                        } else {
+                            if (NIGHT && this.isAjae === false) {
+                                R.go({
+                                    result: 440
+                                });
+                            } else {
+                                DB.UserBlockModule.checkBlockUser(this.id, (userBlockResult) => {
+                                    if (userBlockResult.block) {
+                                        this.sendError(userBlockResult.reason ? 444 : 443, userBlockResult.reason);
                                         this.socket.close();
                                         return;
                                     }
-                                }
-                            }*/
 
-                            this.exordial = $user.exordial || "";
-                            this.createdat = $user.createdat || 0;
-                            this.equip = $user.equip || {};
-                            this.box = $user.box || {};
-                            this.data = new Data($user.kkutu);
-                            this.money = Number($user.money);
-                            this.friends = $user.friends || {};
-                            this.flags = $user.flags || {};
-                            this.membership = obtainMembershipId($user.membership);
-                            this.perks = obtainMembershipPerks(this.membership);
-                            this.server = $user.server || "";
-
-                            let isFlush = {
-                                "item": false,
-                                "equip": false,
-                                "friends": false,
-                                "flags": true
-                            };
-
-                            if (obtainMembershipItems(this, this.membership)) isFlush["item"] = true;
-
-                            if (first) {
-                                this.setFlag()
-                                this.setFlag("flagSystem", 2);
-                                this.setFlag("bought", {});
-                                this.setFlag("uid", nanoid(), true);
-                                this.setFlag("equipMigrate", 3);
-                                this.flush(false, false, false, true);
-                            } else {
-                                if (!this.getFlag("flagSystem")) this.migrateFlags();
-                                if (!this.getFlag("bought")) this.setFlag("bought", {});
-                                if (!this.getFlag("uid")) {
-                                    this.setFlag("uid", nanoid(), true);
-                                    isFlush["flags"] = true;
-                                }
-                                this.checkExpire();
-                                this.okgCount = Math.floor((this.data.playTime || 0) / PER_OKG[this.membership]);
-                                if (this.okgCount > MAX_OKG[this.membership]) this.okgCount = MAX_OKG[this.membership];
-                            }
-
-
-                            let eventStatus = getEventStatus();
-
-                            for (let i in EVENTS) {
-                                let event = EVENTS[i];
-                                let status = eventStatus[i];
-                                if (status) {
-                                    if (eventStatus == 1) { // 이벤트 진행 중에만 갱신하는 정보
-                                        let lastEP = this.getFlag("lastEP");
-                                        if (event.hasOwnProperty("EVENT_POINT") && event.EVENT_ID != lastEP) { // 포인트 이벤트 정보 갱신 필요
-                                            this.setFlag("lastEP", event.EVENT_ID)
-                                            this.setFlag("eventPoint", event.EVENT_POINT.INIT_POINT);
-                                            if (event.EVENT_POINT.ENABLE_TEAM) this.joinNewTeam();
-                                            isFlush["flags"] = true;
-                                        }
-                                        let lastSupport = this.getFlag("lastSupport");
-                                        if (event.hasOwnProperty("EVENT_SUPPORT") && event.EVENT_ID != lastSupport) {
-                                            this.setFlag("lastSupport", event.EVENT_ID)
-                                            for (let item of event.EVENT_SUPPORT.ITEMS) {
-                                                if (item.expire == -1) {
-                                                    this.obtain(item.id, {q: item.value, x: event.EVENT_EXPIRE_AT, mx: true})
-                                                    continue;
-                                                } else if (item.expire > 0) {
-                                                    let expire = Math.floor(new Date().getTime() / 1000) + (item.expire * 86400);
-                                                    this.obtain(item.id, {q: item.value, x: expire, mx: true})
-                                                    continue;
-                                                } else {
-                                                    this.obtain(item.id, {q: item.value})
-                                                    continue;
-                                                }
-                                            }
-                                            isFlush["item"] = true;
-                                            isFlush["flags"] = true;
-                                        }
-                                    }
-
-                                    // 종료 전까지 항상 갱신되는 정보
-                                    if (event.hasOwnProperty("EVENT_POINT")) {
-                                        this.event.point = this.getFlag("eventPoint") || 0;
-                                        this.event.epTotal = this.getFlag("epTotal") || 0;
-                                        if (event.EVENT_POINT.ENABLE_TEAM) this.event.team = this.getFlag("eventTeam");
-                                    }
-                                }
-                            }
-                            
-                            this.flush(
-                                isFlush["item"],
-                                isFlush["equip"],
-                                isFlush["friends"],
-                                isFlush["flags"]
-                            );
-
-                            if (black) {
-                                R.go({
-                                    result: black ? 444 : 443,
-                                    black: black
-                                });
-                            } else {
-                                if (NIGHT && this.isAjae === false) {
-                                    R.go({
-                                        result: 440
-                                    });
-                                } else {
-                                    DB.UserBlockModule.checkBlockUser(this.id, (userBlockResult) => {
-                                        if (userBlockResult.block) {
-                                            this.sendError(userBlockResult.reason ? 444 : 443, userBlockResult.reason);
-                                            this.socket.close();
-                                            return;
+                                    DB.UserBlockModule.checkBlockChat(this.id, (chatBlockResult) => {
+                                        if (chatBlockResult.block) {
+                                            this.dbBlockedChat = chatBlockResult;
                                         }
 
-                                        DB.UserBlockModule.checkBlockChat(this.id, (chatBlockResult) => {
-                                            if (chatBlockResult.block) {
-                                                this.dbBlockedChat = chatBlockResult;
-                                            }
-
-                                            R.go({
-                                                result: 200
-                                            });
+                                        R.go({
+                                            result: 200
                                         });
                                     });
-                                }
+                                });
                             }
-                        });
+                        }
                     });
                 }
             });
@@ -1026,7 +1031,7 @@ export class Client {
 
         return R;
     };
-    
+
     invokeWordPiece (text, coef) {
         if (!this.game.wpc) return;
         let v;
@@ -1037,7 +1042,7 @@ export class Client {
             this.game.wpc.push(v);
         }
     };
-    
+
     invokeEventPiece (text, coef) {
         if (!this.game.wpe) return;
         let v;
@@ -1076,7 +1081,7 @@ export class Client {
         this.setFlag("eventTeam", i + 1); // 팀 번호는 항상 +1
         return i + 1;
     }
-    
+
     equipItem (item, slot) {
         if (EQUIP_SLOTS.indexOf(slot) == -1) return this.sendError(400); // 없는 슬롯에 장착 시도
         if (EQUIP_GROUP[slot].indexOf(item.group) == -1) return this.sendError(400); // 잘못된 슬롯에 장착 시도
@@ -1102,7 +1107,7 @@ export class Client {
         });
         this.flush(this.box, this.equip);
     };
-    
+
     consume (item, count) {
         if (!item.options.hasOwnProperty("gives")) return this.sendError(556);
         if (!this.box.hasOwnProperty(item._id) || this.box[item._id].value < count) return this.sendError(434);
@@ -1237,7 +1242,7 @@ export class Client {
         });
         this.flush(this.box, this.equip);
     };
-    
+
     migrateEquips () {
         if (this.getFlag("equipMigrate")) return this.sendError(400);
         this.setFlag("equipMigrate", 2);
@@ -1337,7 +1342,7 @@ export class Client {
             event: this.event
         });
     }
-    
+
     migrateFlags () {
         if (this.getFlag("flagSystem")) return this.sendError(400);
         this.setFlag("flagSystem", 1);
@@ -1348,17 +1353,17 @@ export class Client {
         }
         this.flush(true, false, false, true);
     };
-    
+
     hasFlag (name) {
         if (!this.flags) return false;
         return this.flags.hasOwnProperty(name);
     };
-    
+
     getFlag (name) {
         if (!this.flags) return false;
         return this.flags.hasOwnProperty(name) ? this.flags[name].value : false;
     };
-    
+
     setFlag (name, value, recordtime) {
         if (!this.flags) return false;
         if (!this.flags.hasOwnProperty(name)) this.flags[name] = {};
@@ -1368,13 +1373,13 @@ export class Client {
         IOLog.info(`${this.id} 님의 플래그가 설정되었습니다. ${name} = ${f.value}`);
         return f.value;
     };
-    
+
     removeFlag (name) {
         if (!this.flags) return false;
         if (!this.flags.hasOwnProperty(name)) return true;
         return (delete this.flags[name]);
     }
-    
+
     getFlagTime (name) {
         if (!this.flags) return 0;
         if (!this.flags.hasOwnProperty(name)) return 0;
@@ -1382,7 +1387,7 @@ export class Client {
         if (!time) return 0;
         else return new Date(time * 1000);
     };
-    
+
     enter (room, spec, pass) {
         let $room, i;
 
@@ -1502,7 +1507,7 @@ export class Client {
             else $room.come(this, room.password, pass);
         }
     };
-    
+
     leave (kickVote) {
         let $room = ROOM[this.place];
         if ($room && $room.game.timer) {
@@ -1528,7 +1533,7 @@ export class Client {
         }
         if ($room) $room.go(this, kickVote);
     };
-    
+
     setForm (mode) {
         let $room = ROOM[this.place];
 
@@ -1538,12 +1543,12 @@ export class Client {
         this.ready = false;
         this.publish('user', this.getData());
     };
-    
+
     setTeam (team) {
         this.team = team;
         this.publish('user', this.getData());
     };
-    
+
     kick (target, kickVote) {
         let $room = ROOM[this.place];
         let i, $c;
@@ -1573,7 +1578,7 @@ export class Client {
             this.publish('kickVote', $room.kickVote, true);
         }
     };
-    
+
     kickVote (client, agree) {
         let $room = ROOM[client.place];
         let $m;
@@ -1599,7 +1604,7 @@ export class Client {
         clearTimeout(client.timers.kick);
         delete client.timers.kick;
     };
-    
+
     toggle () {
         let $room = ROOM[this.place];
 
@@ -1610,7 +1615,7 @@ export class Client {
         this.ready = !this.ready;
         this.publish('user', this.getData());
     };
-    
+
     start () {
         let $room = ROOM[this.place];
 
@@ -1620,7 +1625,7 @@ export class Client {
 
         $room.ready();
     };
-    
+
     practice (level) {
         let $room = ROOM[this.place];
         let ud;
@@ -1647,7 +1652,7 @@ export class Client {
         this.pracRoom.start(level);
         this.pracRoom.game.hum = 1;
     };
-    
+
     setRoom (room) {
         let $room = ROOM[this.place];
 
@@ -1664,7 +1669,7 @@ export class Client {
             this.sendError(400);
         }
     };
-    
+
     applyEquipOptions (rw) {
         let $obj;
         let i, j;
@@ -1699,7 +1704,7 @@ export class Client {
         rw.score = Math.round(rw.score);
         rw.money = Math.round(rw.money);
     };
-    
+
     obtain (k, {q, x, mx}) {
         if (this.guest) return;
         let data = {};
@@ -1738,7 +1743,7 @@ export class Client {
         this.send('obtain', {gain: [{key: k, q: q}], noref: true});
         // if (flush) this.flush(true);
     };
-    
+
     addFriend (id) {
         let fd = DIC[id];
 
@@ -1751,7 +1756,7 @@ export class Client {
         this.flush(false, false, true);
         this.send('friendEdit', {friends: this.friends});
     };
-    
+
     removeFriend (id) {
         DB.users.findOne(['_id', id]).limit(['friends', true]).on(($doc) => {
             if (!$doc) return;
@@ -1844,7 +1849,7 @@ export class Room {
             opts: this.opts
         };
     };
-    
+
     addAI (caller, level) {
         if (this.players.length >= this.limit) {
             return caller.sendError(429);
@@ -1858,7 +1863,7 @@ export class Room {
         this.players.push(new Robot(null, this.id, level));
         this.export();
     };
-    
+
     setAI (target, level, team) {
         let i;
 
@@ -1874,7 +1879,7 @@ export class Room {
         }
         return false;
     };
-    
+
     removeAI (target, noEx) {
         let i, j;
 
@@ -1893,7 +1898,7 @@ export class Room {
         }
         return false;
     };
-    
+
     come (client) {
         if (!this.practice) client.place = this.id;
 
@@ -1911,7 +1916,7 @@ export class Room {
             this.export(client.id);
         }
     };
-    
+
     spectate (client, password) {
         if (!this.practice) client.place = this.id;
         let len = this.players.push(client.id);
@@ -1926,7 +1931,7 @@ export class Room {
             this.export(client.id, false, true);
         }
     };
-    
+
     go (client, kickVote) {
         let x = this.players.indexOf(client.id);
         let me;
@@ -1947,7 +1952,6 @@ export class Room {
             if (this.gaming) {
                 x = this.game.seq.indexOf(client.id);
                 if (x != -1) {
-                    this.interrupt();
                     if (this.game.seq.length <= 2) {
                         this.game.seq.splice(x, 1);
                         this.roundEnd();
@@ -1989,11 +1993,11 @@ export class Room {
             this.export(client.id, kickVote);
         }
     };
-    
+
     setTitle (title) {
         this.title = title;
     };
-    
+
     set (room) {
         let i, k, ij;
 
@@ -2023,7 +2027,7 @@ export class Room {
             if (DIC[this.players[i]]) DIC[this.players[i]].ready = false;
         }
     };
-    
+
     preReady (teams) {
         let i, j, t = 0, l = 0;
         let avTeam = [];
@@ -2059,7 +2063,7 @@ export class Room {
         }
         return false;
     };
-    
+
     ready () {
         let i, all = true;
         let len = 0;
@@ -2091,11 +2095,11 @@ export class Room {
             this.start();
         } else DIC[this.master].sendError(412);
     };
-    
+
     start (pracLevel) {
         let i, j, o, hum = 0;
         let now = (new Date()).getTime();
-        
+
         this.game.event = false;
         this.game.wpeEventIndex = -1;
 
@@ -2175,7 +2179,7 @@ export class Room {
         delete this._teams;
         delete this.game.pool;
     };
-    
+
     roundReady () {
         if (!this.gaming) return;
         if (!this.game.seq || this.game.seq.length < 2) return this.roundEnd();
@@ -2186,7 +2190,7 @@ export class Room {
         if (!this.gaming) return;
         return this.route("roundInfo", client);
     };
-    
+
     interrupt () {
         clearTimeout(this.game._rrt);
         clearTimeout(this.game.turnTimer);
@@ -2194,7 +2198,7 @@ export class Room {
         clearTimeout(this.game.hintTimer2);
         clearTimeout(this.game.qTimer);
     };
-    
+
     roundEnd (data) {
         let i, o, rw;
         let res = [];
@@ -2344,8 +2348,8 @@ export class Room {
         }
         if(Cluster.isWorker){
             // 게임 종료 후 수정되었을 가능성이 있는 정보만 따로 업데이트
-            process.send({ 
-                type: "clients-sync", 
+            process.send({
+                type: "clients-sync",
                 updated: this.game.seq.map(id => DIC[id])
                     .filter(e => e != null && !e.guest)
                     .map(e => ({
@@ -2356,7 +2360,7 @@ export class Room {
                         okgCount: e.okgCount,
                         data: e.data,
                         flag: e.flag
-                    })) 
+                    }))
             });
             IOLog.info("Trying to update..");
         }
@@ -2385,11 +2389,11 @@ export class Room {
         delete this.game.wordLength;
         delete this.game.dic;
     };
-    
+
     byMaster (type, data, nob) {
         if (DIC[this.master]) DIC[this.master].publish(type, data, nob);
     };
-    
+
     export (target, kickVote, spec) {
         let obj = {room: this.getData()};
         let i, o;
@@ -2419,26 +2423,26 @@ export class Room {
             publish('room', obj, this.password);
         }
     };
-    
+
     turnStart (force) {
         if (!this.gaming) return;
         if (!this.game.seq || this.game.seq.length < 2) return this.roundEnd();
         return this.route("turnStart", force);
     };
-    
+
     readyRobot (robot) {
         if (!this.gaming) return;
 
         return this.route("readyRobot", robot);
     };
-    
+
     turnRobot (robot, text, data) {
         if (!this.gaming) return;
 
         this.submit(robot, text, data);
         //return this.route("turnRobot", robot, text);
     };
-    
+
     turnNext (force) {
         if (!this.gaming) return;
         if (!this.game.seq) return;
@@ -2459,23 +2463,23 @@ export class Room {
         this.game.turn = this.game.turn % this.game.seq.length;
         this.turnStart(force);
     };
-    
+
     turnEnd () {
         return this.route("turnEnd");
     };
-    
+
     submit (client, text, data) {
         return this.route("submit", client, text, data);
     };
-    
+
     useItem (client, id) {
         return this.route("useItem", client, id);
     }
-    
+
     getScore (text, delay, ignoreMission) {
         return this.routeSync("getScore", text, delay, ignoreMission);
     };
-    
+
     getTurnSpeed (rt) {
         if (rt < 5000) return 10;
         else if (rt < 11000) return 9;
@@ -2489,7 +2493,7 @@ export class Room {
         else if (rt < 95000) return 1;
         else return 0;
     };
-    
+
     getTitle () {
         return this.route("getTitle");
     };
@@ -2500,7 +2504,7 @@ export class Room {
         if(!(cf = this.checkRoute(func))) return;
         return Slave.run(this, func, args);
     };*/
-    
+
     route (func, ...args) {
         let cf;
 
@@ -2514,7 +2518,7 @@ export class Room {
         if (!(cf = this.checkRoute(func))) return;
         return cf.apply(this, args);
     };
-    
+
     checkRoute (func) {
         let c;
 
@@ -2531,7 +2535,7 @@ export class Room {
         for (let event of EVENTS.filter( v => v.hasOwnProperty("EVENT_WORDPIECE") )) {
             let THEMERULE = [];
             if (!event.EVENT_WORDPIECE.LANG_ENABLED_FOR[lang]) continue;
-            
+
             if (event.EVENT_WORDPIECE.IS_THEME_LIMITED[lang]) {
                 if (!theme || theme.length == 0) continue;
                 let THEMERULE = event.EVENT_WORDPIECE.DROP_THEMES[lang];
