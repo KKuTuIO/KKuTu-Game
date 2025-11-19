@@ -191,14 +191,14 @@ function getMannerTemplate (len) {
 
 export async function refreshWordcache () {
     IOLog.info(`단어 데이터를 메모리에 저장합니다...`)
-    try {
-        const $res_ko = await kkutu['ko'].find(['type', KOR_GROUP]).on();
-        let newCache_ko = {};
-        let newManner_ko = {};
-        let newSpcManner_ko = {};
-        let newTheme_ko = {};
-        for (let resIndex in $res_ko) {
-            const data = $res_ko[resIndex];
+
+    kkutu['ko'].find(['type', KOR_GROUP]).on($res => {
+        let newCache = {};
+        let newManner = {};
+        let newSpcManner = {};
+        let newTheme = {};
+        for (let resIndex in $res) {
+            const data = $res[resIndex];
             const _id = data['_id'];
             const flag = data['flag'];
             const theme = data['theme'].split(',');
@@ -207,13 +207,13 @@ export async function refreshWordcache () {
             const kkt = theme.includes('KKT');
             const emw = theme.includes('EMW');
             
-            newCache_ko[_id] = data;
+            newCache[_id] = data;
 
             // 주제별 캐싱, 선택 불가능 주제는 기록하지 않음
             for (let t of theme) {
                 if (IJP_EXCEPT.includes(t)) continue;
-                if (!newTheme_ko.hasOwnProperty(t)) newTheme_ko[t] = [];
-                newTheme_ko[t].push(data);
+                if (!newTheme.hasOwnProperty(t)) newTheme[t] = [];
+                newTheme[t].push(data);
             }
 
             if (!data['type'].match(KOR_GROUP)) continue; // 클래식에서 사용 불가능한 단어
@@ -244,11 +244,11 @@ export async function refreshWordcache () {
 
             if (fi >= 0) {
                 if (!kkt) { // 쿵쿵따 전용 단어 무시
-                    if (!newManner_ko.hasOwnProperty(start)) newManner_ko[start] = [getMannerTemplate(6), getMannerTemplate(6)];
-                    if (!newManner_ko.hasOwnProperty(last)) newManner_ko[last] = [getMannerTemplate(6), getMannerTemplate(6)];
+                    if (!newManner.hasOwnProperty(start)) newManner[start] = [getMannerTemplate(6), getMannerTemplate(6)];
+                    if (!newManner.hasOwnProperty(last)) newManner[last] = [getMannerTemplate(6), getMannerTemplate(6)];
 
-                    newManner_ko[start][1][fi].push(data);
-                    newManner_ko[last][0][fi].push(data);
+                    newManner[start][1][fi].push(data);
+                    newManner[last][0][fi].push(data);
                 }
 
                 if (_id.length > 3) continue; // 2, 3글자일때는 쿵쿵따 테이블 기록
@@ -256,39 +256,40 @@ export async function refreshWordcache () {
                 let i = 0;
                 if (_id.length == 2) i = 1; // 3232용 2글자 기록
 
-                if (!newSpcManner_ko.hasOwnProperty(last)) newSpcManner_ko[last] = [getMannerTemplate(6), getMannerTemplate(6)];
-                newSpcManner_ko[last][i][fi].push(data);
+                if (!newSpcManner.hasOwnProperty(last)) newSpcManner[last] = [getMannerTemplate(6), getMannerTemplate(6)];
+                newSpcManner[last][i][fi].push(data);
             }
         }
 
-        SUBMIT_WORD_CACHE['ko'] = newCache_ko;
-        MANNER_CACHE['ko'] = newManner_ko;
-        SPC_MANNER_CACHE['ko'] = newSpcManner_ko;
-        THEME_CACHE['ko'] = newTheme_ko;
+        SUBMIT_WORD_CACHE['ko'] = newCache;
+        MANNER_CACHE['ko'] = newManner;
+        SPC_MANNER_CACHE['ko'] = newSpcManner;
+        THEME_CACHE['ko'] = newTheme;
 
         IOLog.info(`${Object.keys(SUBMIT_WORD_CACHE['ko']).length} 개의 한국어 단어 데이터를 메모리에 불러왔습니다.`)
         IOLog.debug(`${Object.keys(MANNER_CACHE['ko']).length} 개의 한국어 일반 매너 데이터를 메모리에 불러왔습니다.`)
         IOLog.debug(`${Object.keys(SPC_MANNER_CACHE['ko']).length} 개의 한국어 특수 매너 데이터를 메모리에 불러왔습니다.`)
         IOLog.debug(`${Object.keys(THEME_CACHE['ko']).length} 개의 한국어 주제 데이터를 메모리에 불러왔습니다.`)
+    });
 
-        const $res_en = await kkutu['en'].find(['_id', ENG_ID]).on();
-        let newCache_en = {};
-        let newManner_en = {};
-        let newSpcManner_en = {};
-        let newTheme_en = {};
-        for (let resIndex in $res_en) {
-            const data = $res_en[resIndex];
+    kkutu['en'].find(['_id', ENG_ID]).on($res => {
+        let newCache = {};
+        let newManner = {};
+        let newSpcManner = {};
+        let newTheme = {};
+        for (let resIndex in $res) {
+            const data = $res[resIndex];
             const _id = data['_id'];
             const flag = data['flag'];
             const theme = data['theme'].split(',');
             
-            newCache_en[_id] = data;
+            newCache[_id] = data;
 
             // 주제별 캐싱, 선택 불가능 주제는 기록하지 않음
             for (let t of theme) {
                 if (IJP_EXCEPT.includes(t)) continue;
-                if (!newTheme_en.hasOwnProperty(t)) newTheme_en[t] = [];
-                newTheme_en[t].push(data);
+                if (!newTheme.hasOwnProperty(t)) newTheme[t] = [];
+                newTheme[t].push(data);
             }
 
             if (!_id.match(ENG_ID)) continue; // 클래식에서 사용 불가능한 단어
@@ -304,44 +305,41 @@ export async function refreshWordcache () {
             let fi = 0;
             if (flag & 2) fi = 1;
 
-            if (!newManner_en.hasOwnProperty(start)) newManner_en[start] = [getMannerTemplate(2), getMannerTemplate(2)];
-            if (!newManner_en.hasOwnProperty(last)) newManner_en[last] = [getMannerTemplate(2), getMannerTemplate(2)];
+            if (!newManner.hasOwnProperty(start)) newManner[start] = [getMannerTemplate(2), getMannerTemplate(2)];
+            if (!newManner.hasOwnProperty(last)) newManner[last] = [getMannerTemplate(2), getMannerTemplate(2)];
 
             if (start != last) { // 글자돌림 제외
-                newManner_en[start][1][fi].push(data);
-                newManner_en[last][0][fi].push(data);
+                newManner[start][1][fi].push(data);
+                newManner[last][0][fi].push(data);
             }
 
             if (_id.length < 4) continue; // 4글자 이상이면 끄투 규칙용 데이터도 저장
             const kkchar = _id.slice(0,3);
             const kksub = _id.slice(0,2);
 
-            if (!newSpcManner_en.hasOwnProperty(kkchar)) newSpcManner_en[kkchar] = getMannerTemplate(2);
-            if (!newSpcManner_en.hasOwnProperty(kksub)) newSpcManner_en[kksub] = getMannerTemplate(2);
+            if (!newSpcManner.hasOwnProperty(kkchar)) newSpcManner[kkchar] = getMannerTemplate(2);
+            if (!newSpcManner.hasOwnProperty(kksub)) newSpcManner[kksub] = getMannerTemplate(2);
 
-            newSpcManner_en[kkchar][fi].push(data);
-            newSpcManner_en[kksub][fi].push(data);
+            newSpcManner[kkchar][fi].push(data);
+            newSpcManner[kksub][fi].push(data);
         }
 
-        SUBMIT_WORD_CACHE['en'] = newCache_en;
-        MANNER_CACHE['en'] = newManner_en;
-        SPC_MANNER_CACHE['en'] = newSpcManner_en;
-        THEME_CACHE['en'] = newTheme_en;
+        SUBMIT_WORD_CACHE['en'] = newCache;
+        MANNER_CACHE['en'] = newManner;
+        SPC_MANNER_CACHE['en'] = newSpcManner;
+        THEME_CACHE['en'] = newTheme;
 
         IOLog.info(`${Object.keys(SUBMIT_WORD_CACHE['en']).length} 개의 영어 단어 데이터를 메모리에 불러왔습니다.`)
         IOLog.debug(`${Object.keys(MANNER_CACHE['en']).length} 개의 영어 일반 매너 데이터를 메모리에 불러왔습니다.`)
         IOLog.debug(`${Object.keys(SPC_MANNER_CACHE['en']).length} 개의 영어 특수 매너 데이터를 메모리에 불러왔습니다.`)
         IOLog.debug(`${Object.keys(THEME_CACHE['en']).length} 개의 영어 주제 데이터를 메모리에 불러왔습니다.`)
-} catch (e) {
-    IOLog.error("단어 캐시 갱신 중 오류:", e)
-}
+    });
 };
 
 export async function refreshShopcache () {    
     IOLog.info('아이템 데이터 갱신을 시작합니다...')
 
-    try {
-        const $res = await kkutu_shop.find().on()
+    kkutu_shop.find().on(function ($res) {
         let newCache = {};
 
         $res.forEach(function (item) {
@@ -351,16 +349,13 @@ export async function refreshShopcache () {
         shop = newCache;
 
         IOLog.info(`${Object.keys(shop).length} 개의 아이템 데이터를 메모리에 불러왔습니다.`)
-    } catch (e) {
-        IOLog.error("아이템 캐시 갱신 중 오류:", e)
-    }
+    });
 };
 
 export async function refreshSurveycache () {
     IOLog.info('설문조사 데이터 갱신을 시작합니다...')
 
-    try {
-        const $res = await kkutu_survey.find().on();
+    kkutu_survey.find().on(function ($res) {
         let newCache = {};
 
         $res.forEach(function (item) {
@@ -370,7 +365,5 @@ export async function refreshSurveycache () {
         survey = newCache;
 
         IOLog.info(`${Object.keys(survey).length} 개의 설문조사 데이터를 메모리에 불러왔습니다.`)
-    } catch (e) {
-        IOLog.error("설문조사 캐시 갱신 중 오류:", e)
-    }
+    });
 };
