@@ -317,6 +317,9 @@ export function Agent (type, origin) {
                                 IOLog.info("onFail calling...");
                                 onFail(err);
                             }
+                            if (f) {
+                                return resolve(null);
+                            }
                             return reject(err);
                         }
                         if (res) {
