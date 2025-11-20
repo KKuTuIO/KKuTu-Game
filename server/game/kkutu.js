@@ -969,6 +969,7 @@ export class Client {
                 }
             });
         } catch (e) {
+            console.error(e);
             this.sendError(456);
             this.socket.close();
         }

@@ -304,112 +304,103 @@ export function Agent (type, origin) {
             _my.sorts = null;
 
             this.on = function (f, chk, onFail) {
-                return new Promise((resolve, reject) => {
-                    let sql;
-                    let sq = _my.second['$set'];
-                    let uq;
+                let sql;
+                let sq = _my.second['$set'];
+                let uq;
 
-                    function preCB(err, res) {
-                        if (err) {
-                            IOLog.error("Error when querying: " + sql);
-                            IOLog.error("Context: " + err.toString());
-                            if (onFail) {
-                                IOLog.info("onFail calling...");
-                                onFail(err);
-                            }
-                            if (f) { 
-                                return resolve(null); 
-                            }
-                            return reject(err);
+                function preCB(err, res) {
+                    if (err) {
+                        IOLog.error("Error when querying: " + sql);
+                        IOLog.error("Context: " + err.toString());
+                        if (onFail) {
+                            IOLog.info("onFail calling...");
+                            onFail(err);
                         }
-                        if (res) {
-                            if (mode == "findOne") {
-                                if (res.rows) res = res.rows[0];
-                            } else if (res.rows) res = res.rows;
+                        return;
+                    }
+                    if (res) {
+                        if (mode == "findOne") {
+                            if (res.rows) res = res.rows[0];
+                        } else if (res.rows) res = res.rows;
+                    }
+                    callback(err, res);
+                    /*
+                    if(mode == "find"){
+                        if(_my.sorts){
+                            doc = doc.sort(_my.sorts);
                         }
-                        callback(err, res);
-                        /*
-                        if(mode == "find"){
-                            if(_my.sorts){
-                                doc = doc.sort(_my.sorts);
-                            }
-                            doc.toArray(callback);
-                        }else callback(err, doc);*/
-                    }
+                        doc.toArray(callback);
+                    }else callback(err, doc);*/
+                }
 
-                    function callback(err, doc) {
-                        if (f) {
-                            if (chk) {
-                                if (isDataAvailable(doc, chk)) f(doc);
-                                else {
-                                    if (onFail) onFail(doc);
-                                    else if (DEBUG) throw new Error("The data from " + mode + "[" + JSON.stringify(q) + "] was not available.");
-                                    else IOLog.warn("The data from [" + JSON.stringify(q) + "] was not available. Callback has been canceled.");
-                                }
-                            } else f(doc);
+                function callback(err, doc) {
+                    if (f) {
+                        if (chk) {
+                            if (isDataAvailable(doc, chk)) f(doc);
+                            else {
+                                if (onFail) onFail(doc);
+                                else if (DEBUG) throw new Error("The data from " + mode + "[" + JSON.stringify(q) + "] was not available.");
+                                else IOLog.warn("The data from [" + JSON.stringify(q) + "] was not available. Callback has been canceled.");
+                            }
+                        } else f(doc);
+                    }
+                }
+
+                switch (mode) {
+                    case "findOne":
+                        _my.findLimit = 1;
+                    case "find":
+                        sql = Escape("SELECT %s FROM %I", sqlSelect(_my.second), col);
+                        if (q) sql += Escape(" WHERE %s", sqlWhere(q).replace(/"([a-zA-Z]+)\(([a-zA-Z0-9_]+)\)"/g, '$1($2)'));
+                        if (_my.sub) {
+                            sql = Escape("SELECT * FROM (") + sql
+                            if (_my.sublim) sql += Escape(" LIMIT %V", _my.sublim);
+                            sql += Escape(") sq");
                         }
-                        resolve(doc)
-                    }
+                        if (_my.random) sql += Escape(" ORDER BY RANDOM ()");
+                        if (_my.sorts) sql += Escape(" ORDER BY %s", _my.sorts.map(function (item) {
+                            return item[0] + ((item[1] == 1) ? ' ASC' : ' DESC');
+                        }).join(','));
+                        if (_my.findLimit) sql += Escape(" LIMIT %V", _my.findLimit);
+                        break;
+                    case "insert":
+                        sql = Escape("INSERT INTO %I (%s) VALUES (%s)", col, sqlIK(q), sqlIV(q));
+                        break;
+                    case "update":
+                        if (_my.second['$inc']) {
+                            sq = sqlSet(_my.second['$inc'], true);
+                        } else {
+                            sq = sqlSet(sq);
+                        }
+                        sql = Escape("UPDATE %I SET %s", col, sq);
+                        if (q) sql += Escape(" WHERE %s", sqlWhere(q));
+                        break;
+                    case "upsert":
+                        // 업데이트 대상을 항상 _id(q의 가장 앞 값)로 가리키는 것으로 가정한다.
+                        uq = uQuery(sq, q[0][1]);
+                        sql = Escape("INSERT INTO %I (%s) VALUES (%s)", col, sqlIK(uq), sqlIV(uq));
+                        sql += Escape(" ON CONFLICT (_id) DO UPDATE SET %s", sqlSet(sq));
+                        break;
+                    case "remove":
+                        sql = Escape("DELETE FROM %I", col);
+                        if (q) sql += Escape(" WHERE %s", sqlWhere(q));
+                        break;
+                    case "createColumn":
+                        sql = Escape("ALTER TABLE %I ADD COLUMN %K %I", col, q[0], q[1]);
+                        break;
+                    default:
+                        IOLog.warn("Unhandled mode: " + mode);
+                }
+                if (!sql) return IOLog.warn("SQL is undefined. This call will be ignored.");
+                // IOLog.info("Query: " + sql);
+                origin.query(sql, preCB);
+                /*if(_my.findLimit){
 
-                    switch (mode) {
-                        case "findOne":
-                            _my.findLimit = 1;
-                        case "find":
-                            sql = Escape("SELECT %s FROM %I", sqlSelect(_my.second), col);
-                            if (q) sql += Escape(" WHERE %s", sqlWhere(q).replace(/"([a-zA-Z]+)\(([a-zA-Z0-9_]+)\)"/g, '$1($2)'));
-                            if (_my.sub) {
-                                sql = Escape("SELECT * FROM (") + sql
-                                if (_my.sublim) sql += Escape(" LIMIT %V", _my.sublim);
-                                sql += Escape(") sq");
-                            }
-                            if (_my.random) sql += Escape(" ORDER BY RANDOM ()");
-                            if (_my.sorts) sql += Escape(" ORDER BY %s", _my.sorts.map(function (item) {
-                                return item[0] + ((item[1] == 1) ? ' ASC' : ' DESC');
-                            }).join(','));
-                            if (_my.findLimit) sql += Escape(" LIMIT %V", _my.findLimit);
-                            break;
-                        case "insert":
-                            sql = Escape("INSERT INTO %I (%s) VALUES (%s)", col, sqlIK(q), sqlIV(q));
-                            break;
-                        case "update":
-                            if (_my.second['$inc']) {
-                                sq = sqlSet(_my.second['$inc'], true);
-                            } else {
-                                sq = sqlSet(sq);
-                            }
-                            sql = Escape("UPDATE %I SET %s", col, sq);
-                            if (q) sql += Escape(" WHERE %s", sqlWhere(q));
-                            break;
-                        case "upsert":
-                            // 업데이트 대상을 항상 _id(q의 가장 앞 값)로 가리키는 것으로 가정한다.
-                            uq = uQuery(sq, q[0][1]);
-                            sql = Escape("INSERT INTO %I (%s) VALUES (%s)", col, sqlIK(uq), sqlIV(uq));
-                            sql += Escape(" ON CONFLICT (_id) DO UPDATE SET %s", sqlSet(sq));
-                            break;
-                        case "remove":
-                            sql = Escape("DELETE FROM %I", col);
-                            if (q) sql += Escape(" WHERE %s", sqlWhere(q));
-                            break;
-                        case "createColumn":
-                            sql = Escape("ALTER TABLE %I ADD COLUMN %K %I", col, q[0], q[1]);
-                            break;
-                        default:
-                            IOLog.warn("Unhandled mode: " + mode);
-                    }
-                    if (!sql) {
-                        IOLog.warn("SQL is undefined. This call will be ignored.");
-                        // IOLog.info("Query: " + sql);
-                        return reject(new Error("SQL is undefined."));
-                    }
-                    origin.query(sql, preCB);
-                    /*if(_my.findLimit){
-
-                        c = my.source[mode](q, flag, { limit: _my.findLimit }, preCB);
-                    }else{
-                        c = my.source[mode](q, _my.second, flag, preCB);
-                    }*/
-                    return sql;
-                });
+                    c = my.source[mode](q, flag, { limit: _my.findLimit }, preCB);
+                }else{
+                    c = my.source[mode](q, _my.second, flag, preCB);
+                }*/
+                return sql;
             };
             // limit: find 쿼리에 걸린 문서를 필터링하는 지침을 정의한다.
             this.limit = function (_data) {
