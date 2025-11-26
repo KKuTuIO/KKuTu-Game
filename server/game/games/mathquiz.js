@@ -197,13 +197,15 @@ export function getScore(problem, answer, isCorrect) {
 
 function calculateDifficulty(problem) {
     const expression = problem.split('=')[0].trim();
-    const operator = expression.split(' ')[1];
+    const [leftStr, operator, rightStr] = expression.split(' ');
+    const left = parseInt(leftStr);
+    const right = parseInt(rightStr);
     
     switch (operator) {
-        case '＋': return 1;
-        case '－': return 1.2;
-        case '×': return 1.4;
-        case '÷': return 1.6;
+        case '+': return 1; break;
+        case '-': return 1.2; break;
+        case '*': return 1.4; break;
+        case '/': return 1.6; break;
         default: return 1;
     }
 }

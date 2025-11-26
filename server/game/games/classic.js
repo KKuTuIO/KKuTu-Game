@@ -194,7 +194,7 @@ export function roundReady () {
         my.roundEnd();
     }
 }
-export function turnStart (force) {
+export function turnStart (force, remainingTime) {
     let my = this;
     let speed;
     let si;
@@ -205,7 +205,12 @@ export function turnStart (force) {
     clearTimeout(my.game.turnTimer);
     clearTimeout(my.game.robotTimer);
     my.game.late = false;
-    my.game.turnTime = 15000 - 1400 * speed;
+
+    if (remainingTime) {
+        my.game.turnTime = remainingTime;
+    } else {
+        my.game.turnTime = 15000 - 1400 * speed;
+    }
     my.game.turnAt = (new Date()).getTime();
     if (my.opts.sami) my.game.wordLength = (my.game.wordLength == 3) ? 2 : 3;
     if (my.opts.mission && my.opts.randmission) my.game.mission = getMission(my.rule.lang, my.opts.tactical);
