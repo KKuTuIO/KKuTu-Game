@@ -27,12 +27,11 @@ let MAX_NUMBER = 10;
 export function getTitle() {
     let R = new Tail();
     let my = this;
-    let i, j;
 
     let data = [];
-    for (i = 0; i < my.round; i++) {
+    for (let i = 0; i < my.round; i++) {
         let arr = [];
-        for (j = 0; j < LIST_LENGTH; j++) {
+        for (let j = 0; j < LIST_LENGTH; j++) {
             arr.push(generateMathProblem());
         }
         data.push(arr);
