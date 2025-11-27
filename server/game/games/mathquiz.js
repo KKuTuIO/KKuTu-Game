@@ -27,12 +27,11 @@ let MAX_NUMBER = 10;
 export function getTitle() {
     let R = new Tail();
     let my = this;
-    let i, j;
 
     let data = [];
-    for (i = 0; i < my.round; i++) {
+    for (let i = 0; i < my.round; i++) {
         let arr = [];
-        for (j = 0; j < LIST_LENGTH; j++) {
+        for (let j = 0; j < LIST_LENGTH; j++) {
             arr.push(generateMathProblem());
         }
         data.push(arr);
@@ -79,6 +78,14 @@ function calculateAnswer(problem) {
         case '÷': return (left / right).toString();
         default: return "0";
     }
+}
+
+function shuffle(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    let j = Math.floor(Math.random() * (i + 1)); // 무작위 인덱스(0 이상 i 미만)
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
 }
 
 export function roundInfo(client) {
@@ -197,15 +204,13 @@ export function getScore(problem, answer, isCorrect) {
 
 function calculateDifficulty(problem) {
     const expression = problem.split('=')[0].trim();
-    const [leftStr, operator, rightStr] = expression.split(' ');
-    const left = parseInt(leftStr);
-    const right = parseInt(rightStr);
+    const operator = expression.split(' ')[1];
     
     switch (operator) {
-        case '+': return 1; break;
-        case '-': return 1.2; break;
-        case '*': return 1.4; break;
-        case '/': return 1.6; break;
+        case '＋': return 1;
+        case '－': return 1.2;
+        case '×': return 1.4;
+        case '÷': return 1.6;
         default: return 1;
     }
 }

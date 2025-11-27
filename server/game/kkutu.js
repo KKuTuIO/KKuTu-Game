@@ -1953,20 +1953,13 @@ export class Room {
             if (this.gaming) {
                 x = this.game.seq.indexOf(client.id);
                 if (x != -1) {
-                    let remainingTime = null;
-                    if (this.game.turnAt && this.game.turnTime) {
-                        const elapsed = Date.now() - this.game.turnAt;
-                        remainingTime = this.game.turnTime - elapsed;
-                        // 서버->클라이언트 소통 간의 딜레이 이슈 (안하면 핑 차이로 바로 턴 종료될 수 있음)
-                        if (remainingTime < 1000) remainingTime = 1000;
-                    }
-                    this.interrupt();
                     if (this.game.seq.length <= 2) {
                         this.game.seq.splice(x, 1);
                         this.roundEnd();
                     } else {
                         me = this.game.turn == x;
                         if (me && this.rule.ewq) {
+                            clearTimeout(this.game._rrt);
                             this.game.loading = false;
                             if (Cluster.isWorker) this.turnEnd();
                         }
@@ -1976,7 +1969,6 @@ export class Room {
                             if (this.game.turn < 0) this.game.turn = this.game.seq.length - 1;
                         }
                         if (this.game.turn >= this.game.seq.length) this.game.turn = 0;
-                        this.turnStart(false, remainingTime);
                     }
                 }
             }
