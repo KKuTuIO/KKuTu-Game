@@ -103,6 +103,7 @@ export function roundReady (){
             round: my.game.round,
             pool: my.game.pool, // TODO: 클라이언트에서는 자신의 풀 데이터만 볼 수 있도록
             subpool: subPool,
+            mission: my.game.mission
         }, true);
         setTimeout(runAs, 2400, my, my.turnStart);
     } else {
@@ -310,6 +311,9 @@ export function submit (client, text){
             char.push(c);
             let sub = getSubChar.call(my, c);
             if (sub) char.push(sub);
+        }
+        if (my.opts.apmal) { 
+            return char.indexOf(text.slice(-1)) != -1; 
         }
 
         return char.indexOf(text[0]) != -1;
