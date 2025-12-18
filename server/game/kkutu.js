@@ -1587,13 +1587,15 @@ export class Client {
         if (!$room) return;
 
         $m = DIC[$room.master];
+        if (!$m) return;
+
         if ($room.kickVote) {
             $room.kickVote[agree ? 'Y' : 'N']++;
             if ($room.kickVote.list.push(client.id) >= $room.players.length - 2) {
                 if ($room.gaming) return;
 
-                if ($room.kickVote.Y >= $room.kickVote.N) $m.kick($room.kickVote.target, $room.kickVote);
-                else $m.publish('kickDeny', {
+                if ($room.kickVote.Y >= $room.kickVote.N) $m.kick?.($room.kickVote.target, $room.kickVote);
+                else $m.publish?.('kickDeny', {
                     target: $room.kickVote.target,
                     Y: $room.kickVote.Y,
                     N: $room.kickVote.N
